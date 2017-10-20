@@ -35,9 +35,9 @@
     <description>Contains Connector and Properties support that some implementations might choose to build upon</description>
 
     <scm>
-        <connection>scm:svn:http://svn.apache.org/repos/asf/sling/trunk/bundles/extensions/discovery/base</connection>
-        <developerConnection>scm:svn:https://svn.apache.org/repos/asf/sling/trunk/bundles/extensions/discovery/base</developerConnection>
-        <url>http://svn.apache.org/viewvc/sling/trunk/bundles/extensions/discovery/base</url>
+        <connection>scm:git:https://gitbox.apache.org/repos/asf/sling-org-apache-sling-discovery-base.git</conncetion>
+        <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/sling-org-apache-sling-discovery-base.git</developerConnection>
+        <url>https://gitbox.apache.org/repos/asf?p=sling-org-apache-sling-discovery-base.git</url>
     </scm>
 
     <properties>
