@@ -51,8 +51,11 @@ public abstract class BaseViewChecker implements ViewChecker, Runnable {
 
     protected final Logger logger = LoggerFactory.getLogger(this.getClass());
 
+    /** Official Endpoint service registration property fromhttp whiteboard spec */
+    private static final String REG_PROPERTY_ENDPOINTS = "osgi.http.endpoints";
+
     /** Endpoint service registration property from RFC 189 */
-    private static final String REG_PROPERTY_ENDPOINTS = "osgi.http.service.endpoints";
+    private static final String REG_PROPERTY_ENDPOINTS_RFC = "osgi.http.service.endpoints";
 
     protected static final String PROPERTY_ID_ENDPOINTS = "endpoints";
 
@@ -65,7 +68,7 @@ public abstract class BaseViewChecker implements ViewChecker, Runnable {
 
     /** the sling id of the local instance **/
     protected String slingId;
-    
+
     /** SLING-2901: the runtimeId is a unique id, set on activation, used for robust duplicate sling.id detection **/
     protected String runtimeId;
 
@@ -85,7 +88,7 @@ public abstract class BaseViewChecker implements ViewChecker, Runnable {
     protected final Map<Long, String[]> endpoints = new HashMap<Long, String[]>();
 
     protected PeriodicBackgroundJob periodicPingJob;
-    
+
     protected abstract SlingSettingsService getSlingSettingsService();
 
     protected abstract ResourceResolverFactory getResourceResolverFactory();
@@ -133,7 +136,7 @@ public abstract class BaseViewChecker implements ViewChecker, Runnable {
             periodicPingJob = null;
         }
     }
-    
+
     /** for testing only **/
     @Override
     public void checkView() {
@@ -141,11 +144,12 @@ public abstract class BaseViewChecker implements ViewChecker, Runnable {
             doCheckView();
         }
     }
-    
+
+    @Override
     public void run() {
         heartbeatAndCheckView();
     }
-    
+
     @Override
     public void heartbeatAndCheckView() {
         logger.debug("heartbeatAndCheckView: start. [for slingId="+slingId+"]");
@@ -179,7 +183,7 @@ public abstract class BaseViewChecker implements ViewChecker, Runnable {
             logger.info("triggerAsyncConnectorPing: Could not trigger heartbeat: " + e);
         }
     }
-    
+
     /**
      * Issue a heartbeat.
      * <p>
@@ -225,7 +229,10 @@ public abstract class BaseViewChecker implements ViewChecker, Runnable {
      * Bind a http service
      */
     protected void bindHttpService(final ServiceReference reference) {
-        final String[] endpointUrls = toStringArray(reference.getProperty(REG_PROPERTY_ENDPOINTS));
+        String[] endpointUrls = toStringArray(reference.getProperty(REG_PROPERTY_ENDPOINTS));
+        if ( endpointUrls == null ) {
+            endpointUrls = toStringArray(reference.getProperty(REG_PROPERTY_ENDPOINTS_RFC));
+        }
         if ( endpointUrls != null ) {
             synchronized ( lock ) {
                 this.endpoints.put((Long)reference.getProperty(Constants.SERVICE_ID), endpointUrls);
@@ -242,7 +249,7 @@ public abstract class BaseViewChecker implements ViewChecker, Runnable {
             }
         }
     }
-    
+
     private String[] toStringArray(final Object propValue) {
         if (propValue == null) {
             // no value at all
@@ -281,7 +288,7 @@ public abstract class BaseViewChecker implements ViewChecker, Runnable {
 
         return null;
     }
-    
+
     protected String getEndpointsAsString() {
         final StringBuilder sb = new StringBuilder();
         boolean first = true;
@@ -296,7 +303,7 @@ public abstract class BaseViewChecker implements ViewChecker, Runnable {
             }
         }
         return sb.toString();
-        
+
     }
 
 }
