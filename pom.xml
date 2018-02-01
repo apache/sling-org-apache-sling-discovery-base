@@ -29,7 +29,7 @@
 
     <artifactId>org.apache.sling.discovery.base</artifactId>
     <packaging>bundle</packaging>
-    <version>2.0.6</version>
+    <version>2.0.7-SNAPSHOT</version>
 
     <name>Apache Sling Discovery Base</name>
     <description>Contains Connector and Properties support that some implementations might choose to build upon</description>
@@ -38,7 +38,7 @@
         <connection>scm:git:https://gitbox.apache.org/repos/asf/sling-org-apache-sling-discovery-base.git</connection>
         <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/sling-org-apache-sling-discovery-base.git</developerConnection>
         <url>https://gitbox.apache.org/repos/asf?p=sling-org-apache-sling-discovery-base.git</url>
-      <tag>org.apache.sling.discovery.base-2.0.6</tag>
+      <tag>HEAD</tag>
   </scm>
 
     <properties>
