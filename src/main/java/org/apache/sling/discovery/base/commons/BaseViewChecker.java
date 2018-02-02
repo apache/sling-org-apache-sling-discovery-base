@@ -52,7 +52,7 @@ public abstract class BaseViewChecker implements ViewChecker, Runnable {
     protected final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     /** Official Endpoint service registration property fromhttp whiteboard spec */
-    private static final String REG_PROPERTY_ENDPOINTS = "osgi.http.endpoints";
+    private static final String REG_PROPERTY_ENDPOINTS = "osgi.http.endpoint";
 
     /** Endpoint service registration property from RFC 189 */
     private static final String REG_PROPERTY_ENDPOINTS_RFC = "osgi.http.service.endpoints";
