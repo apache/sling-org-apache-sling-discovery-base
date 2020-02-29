@@ -319,7 +319,7 @@ public class TopologyRequestValidator {
      */
     private String hash(String toHash) {
         try {
-            MessageDigest m = MessageDigest.getInstance("SHA-256");
+            MessageDigest m = MessageDigest.getInstance("SHA-512");
             return new String(Base64.encodeBase64(m.digest(toHash.getBytes("UTF-8"))), "UTF-8");
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e.getMessage(), e);
