@@ -32,6 +32,7 @@ import java.util.Map;
 
 import javax.servlet.Servlet;
 
+import org.apache.jackrabbit.api.JackrabbitRepository;
 import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ResourceResolverFactory;
 import org.apache.sling.discovery.InstanceDescription;
@@ -46,6 +47,7 @@ import org.apache.sling.discovery.base.connectors.ping.ConnectorRegistry;
 import org.apache.sling.discovery.base.connectors.ping.TopologyConnectorClientInformation;
 import org.apache.sling.discovery.base.connectors.ping.TopologyConnectorServlet;
 import org.apache.sling.discovery.base.its.setup.mock.ArtificialDelay;
+import org.apache.sling.discovery.base.its.setup.mock.DummyResourceResolverFactory;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.nio.SelectChannelConnector;
@@ -405,4 +407,20 @@ public class VirtualInstance {
         return debugName;
     }
 
+    public void shutdownRepository() throws NoSuchFieldException {
+        final JackrabbitRepository jr = getRepository();
+        jr.shutdown();
+    }
+
+    /**
+     * Returns the JackrabbitRepository assuming there is one - otherwise complains
+     * via an IllegalStateException
+     */
+    public JackrabbitRepository getRepository() throws NoSuchFieldException {
+        if ( !(resourceResolverFactory instanceof DummyResourceResolverFactory)) {
+            throw new IllegalStateException("expected a DummyResourceResolverFactory, got a " + resourceResolverFactory);
+        }
+        final DummyResourceResolverFactory f = (DummyResourceResolverFactory) resourceResolverFactory;
+        return f.getJackrabbitRepository();
+    }
 }
