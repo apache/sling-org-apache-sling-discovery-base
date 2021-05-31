@@ -50,6 +50,8 @@ public class MockedResourceResolver implements ResourceResolver {
 
     private final SlingRepository repository;
 
+    private volatile boolean closed = false;
+
 	private Session session;
 
     private List<MockedResource> resources = new LinkedList<MockedResource>();
@@ -88,6 +90,9 @@ public class MockedResourceResolver implements ResourceResolver {
         synchronized (this) {
             if (session != null) {
                 return session;
+            }
+            if (closed) {
+                throw new IllegalStateException("ResourceResolver closed");
             }
             session = createSession();
             return session;
@@ -248,6 +253,7 @@ public class MockedResourceResolver implements ResourceResolver {
             }
             session = null;
         }
+        closed = true;
     }
 
     public void register(MockedResource mockedResource) {
