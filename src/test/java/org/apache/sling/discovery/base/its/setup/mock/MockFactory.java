@@ -21,7 +21,9 @@ package org.apache.sling.discovery.base.its.setup.mock;
 import java.util.Dictionary;
 import java.util.Properties;
 
+import org.apache.jackrabbit.api.JackrabbitRepository;
 import org.apache.sling.api.resource.ResourceResolverFactory;
+import org.apache.sling.commons.testing.jcr.RepositoryUtil.RepositoryWrapper;
 import org.apache.sling.jcr.api.SlingRepository;
 import org.apache.sling.settings.SlingSettingsService;
 import org.jmock.Expectations;
@@ -38,7 +40,15 @@ public class MockFactory {
 
     public static ResourceResolverFactory mockResourceResolverFactory()
             throws Exception {
-        return mockResourceResolverFactory(null);
+        return mockResourceResolverFactory((SlingRepository)null);
+    }
+
+    public static ResourceResolverFactory mockResourceResolverFactory(final JackrabbitRepository jcrRepo) {
+        DummyResourceResolverFactory factory = new DummyResourceResolverFactory();
+        SlingRepository slingRepo = new RepositoryWrapper(jcrRepo);
+        factory.setSlingRepository(slingRepo);
+        factory.setJackrabbitRepository(jcrRepo);
+        return factory;
     }
 
     public static ResourceResolverFactory mockResourceResolverFactory(final SlingRepository repositoryOrNull)
