@@ -22,6 +22,7 @@ import java.util.Map;
 
 import javax.jcr.RepositoryException;
 
+import org.apache.jackrabbit.api.JackrabbitRepository;
 import org.apache.sling.api.resource.LoginException;
 import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ResourceResolverFactory;
@@ -35,6 +36,7 @@ import org.apache.sling.jcr.api.SlingRepository;
 public class DummyResourceResolverFactory implements ResourceResolverFactory {
 
     private SlingRepository repository;
+    private JackrabbitRepository jcrRepo;
     private ArtificialDelay delay;
 
     public DummyResourceResolverFactory() {
@@ -43,6 +45,14 @@ public class DummyResourceResolverFactory implements ResourceResolverFactory {
 
     public void setSlingRepository(SlingRepository repository) {
         this.repository = repository;
+    }
+
+    public void setJackrabbitRepository(JackrabbitRepository jcrRepo) {
+        this.jcrRepo = jcrRepo;
+    }
+
+    public JackrabbitRepository getJackrabbitRepository() {
+        return jcrRepo;
     }
 
     public void setArtificialDelay(ArtificialDelay delay) {
