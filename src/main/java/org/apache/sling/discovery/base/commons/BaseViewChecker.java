@@ -20,7 +20,6 @@ package org.apache.sling.discovery.base.commons;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -178,7 +177,7 @@ public abstract class BaseViewChecker implements ViewChecker, Runnable {
             // 'fireJob' checks for a job from the same job-class to already exist
             // 'fireJobAt' though allows to pass a name for the job - which can be made unique, thus does not conflict/already-exist
             logger.info("triggerAsyncConnectorPing: firing job to trigger heartbeat");
-            getScheduler().fireJobAt(NAME+UUID.randomUUID(), this, null, new Date(System.currentTimeMillis()-1000 /* make sure it gets triggered immediately*/));
+            getScheduler().schedule(this, getScheduler().NOW().name(NAME+UUID.randomUUID()));
         } catch (Exception e) {
             logger.info("triggerAsyncConnectorPing: Could not trigger heartbeat: " + e);
         }

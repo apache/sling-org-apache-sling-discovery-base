@@ -22,9 +22,6 @@ import java.util.UUID;
 
 import org.apache.sling.api.resource.ResourceResolverFactory;
 import org.apache.sling.commons.scheduler.Scheduler;
-import org.apache.sling.commons.scheduler.impl.QuartzScheduler;
-import org.apache.sling.commons.threads.ThreadPoolManager;
-import org.apache.sling.commons.threads.impl.DefaultThreadPoolManager;
 import org.apache.sling.discovery.base.commons.BaseDiscoveryService;
 import org.apache.sling.discovery.base.commons.ClusterViewService;
 import org.apache.sling.discovery.base.commons.ViewChecker;
@@ -34,30 +31,18 @@ import org.apache.sling.discovery.base.connectors.ping.ConnectorRegistry;
 import org.apache.sling.discovery.base.connectors.ping.ConnectorRegistryImpl;
 import org.apache.sling.discovery.base.its.setup.mock.ArtificialDelay;
 import org.apache.sling.discovery.base.its.setup.mock.FailingScheduler;
+import org.apache.sling.discovery.commons.providers.base.DummyScheduler;
 import org.apache.sling.discovery.commons.providers.spi.base.DummySlingSettingsService;
 import org.apache.sling.settings.SlingSettingsService;
-
-import junitx.util.PrivateAccessor;
 
 public abstract class VirtualInstanceBuilder {
 
     private static Scheduler singletonScheduler = null;
     
     public static Scheduler getSingletonScheduler() throws Exception {
-        if (singletonScheduler!=null) {
-            return singletonScheduler;
+        if (singletonScheduler == null) {
+            singletonScheduler = new DummyScheduler();
         }
-        final Scheduler newscheduler = new QuartzScheduler();
-        final ThreadPoolManager tpm = new DefaultThreadPoolManager(null, null);
-        try {
-            PrivateAccessor.invoke(newscheduler, "bindThreadPoolManager",
-                    new Class[] { ThreadPoolManager.class },
-                    new Object[] { tpm });
-        } catch (Throwable e1) {
-            org.junit.Assert.fail(e1.toString());
-        }
-        OSGiMock.activate(newscheduler);
-        singletonScheduler = newscheduler;
         return singletonScheduler;
     }
 
