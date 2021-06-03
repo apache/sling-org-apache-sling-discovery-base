@@ -23,10 +23,14 @@ import java.util.Date;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
+import org.apache.sling.commons.scheduler.ScheduleOptions;
 import org.apache.sling.commons.scheduler.Scheduler;
+import org.mockito.Mockito;
 
 public class FailingScheduler implements Scheduler {
     
+    private final ScheduleOptions options = Mockito.mock(ScheduleOptions.class);
+
     @Override
     public void removeJob(String name) throws NoSuchElementException {
         // nothing to do here
@@ -68,5 +72,42 @@ public class FailingScheduler implements Scheduler {
     public void addJob(String name, Object job, Map<String, Serializable> config, String schedulingExpression,
             boolean canRunConcurrently) throws Exception {
         throw new Exception("cos you are really worth it");
+    }
+
+    @Override
+    public boolean schedule(Object job, ScheduleOptions options) {
+        // fails on purpose
+        return false;
+    }
+
+    @Override
+    public boolean unschedule(String jobName) {
+        // fails on purpose
+        return false;
+    }
+
+    @Override
+    public ScheduleOptions NOW() {
+        return options;
+    }
+
+    @Override
+    public ScheduleOptions NOW(int times, long period) {
+        return options;
+    }
+
+    @Override
+    public ScheduleOptions AT(Date date) {
+        return options;
+    }
+
+    @Override
+    public ScheduleOptions AT(Date date, int times, long period) {
+        return options;
+    }
+
+    @Override
+    public ScheduleOptions EXPR(String expression) {
+        return options;
     }
 }
