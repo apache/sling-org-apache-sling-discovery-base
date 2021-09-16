@@ -314,7 +314,7 @@ public class TopologyRequestValidator {
     }
 
     /**
-     * @param body
+     * @param toHash A string
      * @return a hash of body base64 encoded.
      */
     private String hash(String toHash) {
@@ -363,10 +363,13 @@ public class TopologyRequestValidator {
                 return false;
             }
             String[] parts = signature.split("/", 2);
+            if (parts.length < 2) {
+                return false;
+            }
             int keyNo = Integer.parseInt(parts[0]);
-            return hmac(keyNo, bodyHash).equals(parts[1]);
-        } catch (ArrayIndexOutOfBoundsException e) {
-            return false;
+            return MessageDigest.isEqual(
+                hmac(keyNo, bodyHash).getBytes("UTF-8"),
+                parts[1].getBytes("UTF-8"));
         } catch (IllegalArgumentException e) {
             return false;
         } catch (InvalidKeyException e) {
@@ -428,13 +431,12 @@ public class TopologyRequestValidator {
      * @throws NoSuchPaddingException
      * @throws InvalidKeySpecException
      * @throws InvalidAlgorithmParameterException
-     * @throws JSONException
      */
     private String decrypt(JsonArray jsonArray) throws IllegalBlockSizeException,
             BadPaddingException, UnsupportedEncodingException, InvalidKeyException,
             NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException, InvalidKeySpecException {
         Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-        cipher.init(Cipher.DECRYPT_MODE, getCiperKey(Base64.decodeBase64(jsonArray.get(0).toString().getBytes("UTF-8"))), new IvParameterSpec(Base64.decodeBase64(jsonArray.get(1).toString().getBytes("UTF-8"))));
+        cipher.init(Cipher.DECRYPT_MODE, getCipherKey(Base64.decodeBase64(jsonArray.get(0).toString().getBytes("UTF-8"))), new IvParameterSpec(Base64.decodeBase64(jsonArray.get(1).toString().getBytes("UTF-8"))));
         return new String(cipher.doFinal(Base64.decodeBase64(jsonArray.get(2).toString().getBytes("UTF-8"))));
     }
 
@@ -442,7 +444,6 @@ public class TopologyRequestValidator {
      * Encrypt a payload with the numbed key/
      *
      * @param payload the payload.
-     * @param keyNo the key number.
      * @return an encrypted version.
      * @throws IllegalBlockSizeException
      * @throws BadPaddingException
@@ -459,7 +460,7 @@ public class TopologyRequestValidator {
         Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
         byte[] salt = new byte[9];
         random.nextBytes(salt);
-        cipher.init(Cipher.ENCRYPT_MODE, getCiperKey(salt));
+        cipher.init(Cipher.ENCRYPT_MODE, getCipherKey(salt));
         AlgorithmParameters params = cipher.getParameters();
         List<String> encrypted = new ArrayList<String>();
         encrypted.add(new String(Base64.encodeBase64(salt)));
@@ -470,19 +471,18 @@ public class TopologyRequestValidator {
 
     /**
      * @param salt number of the key.
-     * @return the CupherKey.
-     * @throws UnsupportedEncodingException
+     * @return the CipherKey.
      * @throws NoSuchAlgorithmException
      * @throws InvalidKeySpecException
      */
-    private Key getCiperKey(byte[] salt) throws UnsupportedEncodingException, NoSuchAlgorithmException, InvalidKeySpecException {
-        SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
-        // hashing the password 65K times takes 151ms, hashing 256 times takes 2ms.
-        // Since the salt has 2^^72 values, 256 times is probably good enough.
-        KeySpec spec = new PBEKeySpec(sharedKey.toCharArray(), salt, 256, 128);
+    private Key getCipherKey(byte[] salt) throws NoSuchAlgorithmException, InvalidKeySpecException {
+        // RFC 2898 suggests the salt to be at least 64 bits long
+        // The NIST guidelines suggest the iteration count to be at least 10000
+        // Using longer hashes (SHA-256 and higher) increases the attacker's costs
+        SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
+        KeySpec spec = new PBEKeySpec(sharedKey.toCharArray(), salt, 10000, 128);
         SecretKey tmp = factory.generateSecret(spec);
-        SecretKey key = new SecretKeySpec(tmp.getEncoded(), "AES");
-        return key;
+        return new SecretKeySpec(tmp.getEncoded(), "AES");
     }
 
     /**
@@ -552,9 +552,11 @@ public class TopologyRequestValidator {
         if (contentEncoding!=null && contentEncoding.contains("gzip")) {
             // then treat the request body as gzip:
             final GZIPInputStream gzipIn = new GZIPInputStream(request.getInputStream());
-            final String gunzippedEncodedJson = IOUtils.toString(gzipIn);
-            gzipIn.close();
-            return gunzippedEncodedJson;
+            try {
+                return IOUtils.toString(gzipIn);
+            } finally {
+                gzipIn.close();
+            }
         } else {
             // otherwise assume plain-text:
             return IOUtils.toString(request.getReader());
@@ -572,9 +574,11 @@ public class TopologyRequestValidator {
                 contentEncoding.getValue().contains("gzip")) {
             // then the server sent gzip - treat it so:
             final GZIPInputStream gzipIn = new GZIPInputStream(response.getEntity().getContent());
-            final String gunzippedEncodedJson = IOUtils.toString(gzipIn);
-            gzipIn.close();
-            return gunzippedEncodedJson;
+            try {
+                return IOUtils.toString(gzipIn);
+            } finally {
+                gzipIn.close();
+            }
         } else {
         	// otherwise the server sent plaintext:
         	return IOUtils.toString(response.getEntity().getContent(), "UTF-8");
