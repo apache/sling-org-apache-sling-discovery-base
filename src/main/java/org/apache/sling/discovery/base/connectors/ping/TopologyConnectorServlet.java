@@ -34,11 +34,6 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.felix.scr.annotations.Activate;
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Deactivate;
-import org.apache.felix.scr.annotations.Reference;
-import org.apache.felix.scr.annotations.Service;
 import org.apache.sling.discovery.ClusterView;
 import org.apache.sling.discovery.base.commons.ClusterViewHelper;
 import org.apache.sling.discovery.base.commons.ClusterViewService;
@@ -51,6 +46,10 @@ import org.apache.sling.discovery.base.connectors.ping.wl.SubnetWhitelistEntry;
 import org.apache.sling.discovery.base.connectors.ping.wl.WhitelistEntry;
 import org.apache.sling.discovery.base.connectors.ping.wl.WildcardWhitelistEntry;
 import org.osgi.service.component.ComponentContext;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.http.HttpService;
 import org.osgi.service.http.NamespaceException;
 import org.slf4j.Logger;
@@ -63,8 +62,7 @@ import org.slf4j.LoggerFactory;
  * hmac-signature with a shared key or via a flexible whitelist)
  */
 @SuppressWarnings("serial")
-@Component(immediate = true)
-@Service(value=TopologyConnectorServlet.class)
+@Component(immediate = true, service = TopologyConnectorServlet.class)
 public class TopologyConnectorServlet extends HttpServlet {
 
     /** 

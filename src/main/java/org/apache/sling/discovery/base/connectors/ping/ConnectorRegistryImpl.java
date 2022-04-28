@@ -28,15 +28,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.apache.felix.scr.annotations.Activate;
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Deactivate;
-import org.apache.felix.scr.annotations.Reference;
-import org.apache.felix.scr.annotations.Service;
 import org.apache.sling.discovery.base.commons.ClusterViewService;
 import org.apache.sling.discovery.base.connectors.BaseConfig;
 import org.apache.sling.discovery.base.connectors.announcement.AnnouncementRegistry;
-import org.osgi.service.component.ComponentContext;
+import org.osgi.framework.BundleContext;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Reference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,8 +44,7 @@ import org.slf4j.LoggerFactory;
  * keeps a list of outgoing connectors and is capable of
  * pinging them.
  */
-@Component
-@Service(value = ConnectorRegistry.class)
+@Component(service=ConnectorRegistry.class)
 public class ConnectorRegistryImpl implements ConnectorRegistry {
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
@@ -74,8 +72,8 @@ public class ConnectorRegistryImpl implements ConnectorRegistry {
     }
     
     @Activate
-    protected void activate(final ComponentContext cc) {
-        port = cc.getBundleContext().getProperty("org.osgi.service.http.port");
+    protected void activate(BundleContext context) {
+        port = context.getProperty("org.osgi.service.http.port");
     }
     
     @Deactivate

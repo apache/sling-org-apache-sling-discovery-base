@@ -27,10 +27,6 @@ import java.util.Map.Entry;
 
 import javax.json.JsonException;
 
-import org.apache.felix.scr.annotations.Activate;
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Reference;
-import org.apache.felix.scr.annotations.Service;
 import org.apache.sling.api.resource.LoginException;
 import org.apache.sling.api.resource.PersistenceException;
 import org.apache.sling.api.resource.Resource;
@@ -42,6 +38,10 @@ import org.apache.sling.discovery.InstanceDescription;
 import org.apache.sling.discovery.base.connectors.BaseConfig;
 import org.apache.sling.discovery.commons.providers.util.ResourceHelper;
 import org.apache.sling.settings.SlingSettingsService;
+import org.osgi.framework.BundleContext;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,8 +50,7 @@ import org.slf4j.LoggerFactory;
  * handles JSON-backed announcements and does so by storing
  * them in a local like /var/discovery/impl/clusterNodes/$slingId/announcement.
  */
-@Component
-@Service(value = AnnouncementRegistry.class)
+@Component(service = AnnouncementRegistry.class)
 public class AnnouncementRegistryImpl implements AnnouncementRegistry {
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
@@ -88,8 +87,7 @@ public class AnnouncementRegistryImpl implements AnnouncementRegistry {
         slingId = settingsService.getSlingId();
     }
 
-    private final Map<String,CachedAnnouncement> ownAnnouncementsCache =
-            new HashMap<String,CachedAnnouncement>();
+    private final Map<String,CachedAnnouncement> ownAnnouncementsCache = new HashMap<>();
 
     @Override
     public synchronized void unregisterAnnouncement(final String ownerId) {
@@ -138,7 +136,7 @@ public class AnnouncementRegistryImpl implements AnnouncementRegistry {
 
     @Override
     public synchronized Collection<Announcement> listLocalAnnouncements() {
-        return fillWithCachedAnnouncements(new LinkedList<Announcement>());
+        return fillWithCachedAnnouncements(new LinkedList<>());
     }
 
     @Override
@@ -176,7 +174,7 @@ public class AnnouncementRegistryImpl implements AnnouncementRegistry {
             throw new IllegalArgumentException("clusterView must not be null");
         }
         ResourceResolver resourceResolver = null;
-        final Collection<Announcement> incomingAnnouncements = new LinkedList<Announcement>();
+        final Collection<Announcement> incomingAnnouncements = new LinkedList<>();
         final InstanceDescription localInstance = getLocalInstanceDescription(localClusterView);
         try {
             resourceResolver = resourceResolverFactory
