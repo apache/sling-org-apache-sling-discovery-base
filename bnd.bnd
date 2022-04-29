@@ -1,2 +1,2 @@
-Import-Package: !org.apache.commons.net.util.*, *
+Import-Package: !org.apache.commons.net.util.*, !java.util.*, !java.io.*, !java.lang, !java.net, !java.security.*, *
 Embed-Dependency: commons-net;inline=org/apache/commons/net/util/SubnetUtils*
