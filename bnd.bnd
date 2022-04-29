@@ -1,0 +1,2 @@
+Import-Package: !org.apache.commons.net.util.*, *
+Embed-Dependency: commons-net;inline=org/apache/commons/net/util/SubnetUtils*
