@@ -38,7 +38,6 @@ import org.apache.sling.discovery.InstanceDescription;
 import org.apache.sling.discovery.base.connectors.BaseConfig;
 import org.apache.sling.discovery.commons.providers.util.ResourceHelper;
 import org.apache.sling.settings.SlingSettingsService;
-import org.osgi.framework.BundleContext;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -141,7 +140,7 @@ public class AnnouncementRegistryImpl implements AnnouncementRegistry {
 
     @Override
     public synchronized Collection<CachedAnnouncement> listLocalIncomingAnnouncements() {
-        Collection<CachedAnnouncement> result = new LinkedList<CachedAnnouncement>(ownAnnouncementsCache.values());
+        Collection<CachedAnnouncement> result = new LinkedList<>(ownAnnouncementsCache.values());
         for (Iterator<CachedAnnouncement> it = result.iterator(); it.hasNext();) {
             CachedAnnouncement cachedAnnouncement = it.next();
             if (cachedAnnouncement.getAnnouncement().isInherited()) {
@@ -337,7 +336,7 @@ public class AnnouncementRegistryImpl implements AnnouncementRegistry {
         }
 
         logger.debug("registerAnnouncement: getting the list of all local announcements");
-        final Collection<Announcement> announcements = new LinkedList<Announcement>();
+        final Collection<Announcement> announcements = new LinkedList<>();
         fillWithCachedAnnouncements(announcements);
         if (logger.isDebugEnabled()) {
             logger.debug("registerAnnouncement: list returned: "+(announcements==null ? "null" : announcements.size()));
@@ -585,7 +584,7 @@ public class AnnouncementRegistryImpl implements AnnouncementRegistry {
     @Override
     public synchronized Collection<InstanceDescription> listInstances(final ClusterView localClusterView) {
         logger.debug("listInstances: start. localClusterView: {}", localClusterView);
-        final Collection<InstanceDescription> instances = new LinkedList<InstanceDescription>();
+        final Collection<InstanceDescription> instances = new LinkedList<>();
 
         final Collection<Announcement> announcements = listAnnouncementsInSameCluster(localClusterView);
         if (announcements == null) {

@@ -50,7 +50,7 @@ public class ConnectorRegistryImpl implements ConnectorRegistry {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     /** A map of id-> topology connector clients currently registered/activate **/
-    private final Map<String, TopologyConnectorClient> outgoingClientsMap = new HashMap<String, TopologyConnectorClient>();
+    private final Map<String, TopologyConnectorClient> outgoingClientsMap = new HashMap<>();
 
     @Reference
     private AnnouncementRegistry announcementRegistry;
@@ -100,7 +100,7 @@ public class ConnectorRegistryImpl implements ConnectorRegistry {
                 Entry<String, TopologyConnectorClient> entry = it.next();
                 if (entry.getValue().getConnectorUrl().toExternalForm().equals(connectorUrl.toExternalForm())) {
                     it.remove();
-                    logger.info("registerOutgoingConnection: re-registering connector: "+connectorUrl);
+                    logger.info("registerOutgoingConnection: re-registering connector: {}", connectorUrl);
                 }
             }
             String serverInfo;
@@ -120,7 +120,7 @@ public class ConnectorRegistryImpl implements ConnectorRegistry {
     }
 
     public Collection<TopologyConnectorClientInformation> listOutgoingConnectors() {
-        final List<TopologyConnectorClientInformation> result = new ArrayList<TopologyConnectorClientInformation>();
+        final List<TopologyConnectorClientInformation> result = new ArrayList<>();
         synchronized (outgoingClientsMap) {
             result.addAll(outgoingClientsMap.values());
         }
@@ -143,7 +143,7 @@ public class ConnectorRegistryImpl implements ConnectorRegistry {
     public void pingOutgoingConnectors(boolean force) {
         List<TopologyConnectorClient> outgoingTemplatesClone;
         synchronized (outgoingClientsMap) {
-            outgoingTemplatesClone = new ArrayList<TopologyConnectorClient>(
+            outgoingTemplatesClone = new ArrayList<>(
                     outgoingClientsMap.values());
         }
         for (Iterator<TopologyConnectorClient> it = outgoingTemplatesClone

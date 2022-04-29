@@ -213,7 +213,9 @@ public class TopologyConnectorServlet extends HttpServlet {
         final String selector = pathInfo.length == 3 ? pathInfo[1] : "";
 
         String topologyAnnouncementJSON = requestValidator.decodeMessage(request);
-        logger.debug("doPost: incoming topology announcement is: " + topologyAnnouncementJSON);
+
+        // javasecurity:S5145: Replace pattern-breaking characters
+        logger.debug("doPost: incoming topology announcement is: " + topologyAnnouncementJSON.replaceAll("[\n\r\t]", "_"));
 
         final Announcement incomingTopologyAnnouncement;
         try {
@@ -277,23 +279,18 @@ public class TopologyConnectorServlet extends HttpServlet {
                     // normal, successful case: replying with the part of the topology which this instance sees
                     replyAnnouncement.setLocalCluster(clusterView);
                     announcementRegistry.addAllExcept(replyAnnouncement, clusterView,
-                            new AnnouncementFilter() {
-
-                                public boolean accept(final String receivingSlingId, Announcement announcement) {
-                                    if (announcement.getPrimaryKey().equals(
-                                            incomingTopologyAnnouncement.getPrimaryKey())) {
-                                        return false;
-                                    }
-                                    return true;
+                            (receivingSlingId, announcement) -> {
+                                if (announcement.getPrimaryKey().equals(
+                                        incomingTopologyAnnouncement.getPrimaryKey())) {
+                                    return false;
                                 }
+                                return true;
                             });
                 }
             }
             if (backoffInterval > 0) {
                 replyAnnouncement.setBackoffInterval(backoffInterval);
-                if (logger.isDebugEnabled()) {
-                    logger.debug("doPost: backoffInterval for client set to " + replyAnnouncement.getBackoffInterval());
-                }
+                logger.debug("doPost: backoffInterval for client set to " + replyAnnouncement.getBackoffInterval());
             }
             final String p = requestValidator.encodeMessage(replyAnnouncement.asJSON());
             requestValidator.trustMessage(response, request, p);
