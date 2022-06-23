@@ -40,7 +40,6 @@ import org.apache.sling.discovery.base.commons.ClusterViewService;
 import org.apache.sling.discovery.base.commons.UndefinedClusterViewException;
 import org.apache.sling.discovery.base.connectors.BaseConfig;
 import org.apache.sling.discovery.base.connectors.announcement.Announcement;
-import org.apache.sling.discovery.base.connectors.announcement.AnnouncementFilter;
 import org.apache.sling.discovery.base.connectors.announcement.AnnouncementRegistry;
 import org.apache.sling.discovery.base.connectors.ping.wl.SubnetWhitelistEntry;
 import org.apache.sling.discovery.base.connectors.ping.wl.WhitelistEntry;

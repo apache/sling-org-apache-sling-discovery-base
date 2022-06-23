@@ -23,7 +23,7 @@
     <parent>
         <groupId>org.apache.sling</groupId>
         <artifactId>sling-bundle-parent</artifactId>
-        <version>47</version>
+        <version>48</version>
         <relativePath />
     </parent>
 
@@ -41,9 +41,7 @@
     </scm>
 
     <properties>
-        <project.build.outputTimestamp>1</project.build.outputTimestamp>
-        <sling.java.version>8</sling.java.version>
-        <jackrabbit.version>2.16.9</jackrabbit.version>
+        <jackrabbit.version>2.14.3</jackrabbit.version>
         <!-- by default Slow tests are excluded - use -PincludeSlowTests to include them -->
         <sling.excluded.surefire.groups>org.apache.sling.commons.testing.junit.categories.Slow</sling.excluded.surefire.groups>
     </properties>
@@ -58,10 +56,6 @@
                     <argLine>-Xmx2048m</argLine>
                     <excludedGroups>${sling.excluded.surefire.groups}</excludedGroups>
                 </configuration>
-            </plugin>
-            <plugin>
-                <groupId>biz.aQute.bnd</groupId>
-                <artifactId>bnd-maven-plugin</artifactId>
             </plugin>
 			<!-- discovery.base exports a few test classes for reuse.
                  In order for others to use these, the test-jar must be built/installed too.
@@ -85,21 +79,24 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-	        <version>1.6.1</version>
         </dependency>
 
         <!-- OSGi Dependencies -->
         <dependency>
             <groupId>org.osgi</groupId>
             <artifactId>osgi.core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.osgi</groupId>
-            <artifactId>osgi.cmpn</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.osgi</groupId>
             <artifactId>org.osgi.annotation.versioning</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.osgi</groupId>
+            <artifactId>org.osgi.service.http</artifactId>
+            <version>1.2.2</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.geronimo.specs</groupId>
@@ -116,10 +113,12 @@
 		<dependency>
 			<groupId>javax.jcr</groupId>
 			<artifactId>jcr</artifactId>
+            <scope>provided</scope>
 		</dependency>
         <dependency>
             <groupId>javax.servlet</groupId>
             <artifactId>javax.servlet-api</artifactId>
+            <scope>provided</scope>
         </dependency>
 		<dependency>
 			<groupId>org.apache.jackrabbit</groupId>
@@ -133,12 +132,6 @@
             <version>${jackrabbit.version}</version>
             <scope>provided</scope>
         </dependency>
-		<dependency>
-			<groupId>org.apache.sling</groupId>
-			<artifactId>org.apache.sling.commons.osgi</artifactId>
-			<version>2.1.0</version>
-			<scope>provided</scope>
-		</dependency>
 		<dependency>
 			<groupId>org.apache.sling</groupId>
 			<artifactId>org.apache.sling.settings</artifactId>
@@ -162,7 +155,7 @@
         <dependency>
             <groupId>org.apache.sling</groupId>
             <artifactId>org.apache.sling.discovery.commons</artifactId>
-            <version>1.0.24</version>
+            <version>1.0.26</version>
             <scope>test</scope>
             <type>test-jar</type>
         </dependency>
@@ -213,6 +206,7 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>junit-addons</groupId>
