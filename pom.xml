@@ -41,6 +41,8 @@
     </scm>
 
     <properties>
+        <!-- SLING-11355 - since we can't bump to major versions -->
+        <bnd.baseline.continue.on.error>true</bnd.baseline.continue.on.error>
         <jackrabbit.version>2.14.3</jackrabbit.version>
         <!-- by default Slow tests are excluded - use -PincludeSlowTests to include them -->
         <sling.excluded.surefire.groups>org.apache.sling.commons.testing.junit.categories.Slow</sling.excluded.surefire.groups>
