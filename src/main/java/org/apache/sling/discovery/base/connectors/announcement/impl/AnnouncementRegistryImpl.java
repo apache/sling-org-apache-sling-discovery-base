@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.sling.discovery.base.connectors.announcement;
+package org.apache.sling.discovery.base.connectors.announcement.impl;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -36,6 +36,10 @@ import org.apache.sling.api.resource.ValueMap;
 import org.apache.sling.discovery.ClusterView;
 import org.apache.sling.discovery.InstanceDescription;
 import org.apache.sling.discovery.base.connectors.BaseConfig;
+import org.apache.sling.discovery.base.connectors.announcement.Announcement;
+import org.apache.sling.discovery.base.connectors.announcement.AnnouncementFilter;
+import org.apache.sling.discovery.base.connectors.announcement.AnnouncementRegistry;
+import org.apache.sling.discovery.base.connectors.announcement.CachedAnnouncement;
 import org.apache.sling.discovery.commons.providers.util.ResourceHelper;
 import org.apache.sling.settings.SlingSettingsService;
 import org.osgi.service.component.annotations.Activate;
@@ -86,7 +90,7 @@ public class AnnouncementRegistryImpl implements AnnouncementRegistry {
         slingId = settingsService.getSlingId();
     }
 
-    private final Map<String,CachedAnnouncement> ownAnnouncementsCache = new HashMap<>();
+    private final Map<String, CachedAnnouncement> ownAnnouncementsCache = new HashMap<>();
 
     @Override
     public synchronized void unregisterAnnouncement(final String ownerId) {

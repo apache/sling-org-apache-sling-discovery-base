@@ -43,7 +43,7 @@ public class CachedAnnouncement {
 
     private final BaseConfig config;
     
-    CachedAnnouncement(final Announcement announcement, final BaseConfig config) {
+    public CachedAnnouncement(final Announcement announcement, final BaseConfig config) {
         this.announcement = announcement;
         this.config = config;
     }
@@ -94,7 +94,7 @@ public class CachedAnnouncement {
      * @return the new resulting backoff interval -
      * or 0 if no backoff is applicable yet.
      */
-    final long registerPing(Announcement incomingAnnouncement, BaseConfig config) {
+    public final long registerPing(Announcement incomingAnnouncement, BaseConfig config) {
         lastPing = System.currentTimeMillis();
         announcement.registerPing(incomingAnnouncement);
         if (incomingAnnouncement.isInherited()) {

@@ -112,9 +112,9 @@ public class TopologyConnectorClient implements
     /** SLING-3382: unix-time at which point the backoff-period ends and pings can be sent again **/
     private long backoffPeriodEnd = -1;
     
-    TopologyConnectorClient(final ClusterViewService clusterViewService,
-            final AnnouncementRegistry announcementRegistry, final BaseConfig config,
-            final URL connectorUrl, final String serverInfo) {
+    public TopologyConnectorClient(final ClusterViewService clusterViewService,
+                                   final AnnouncementRegistry announcementRegistry, final BaseConfig config,
+                                   final URL connectorUrl, final String serverInfo) {
         if (clusterViewService == null) {
             throw new IllegalArgumentException(
                     "clusterViewService must not be null");
@@ -139,7 +139,7 @@ public class TopologyConnectorClient implements
     }
 
     /** ping the server and pass the announcements between the two **/
-    void ping(final boolean force) {
+    public void ping(final boolean force) {
     	if (autoStopped) {
     		// then we suppress any further pings!
     		logger.debug("ping: autoStopped=true, hence suppressing any further pings.");

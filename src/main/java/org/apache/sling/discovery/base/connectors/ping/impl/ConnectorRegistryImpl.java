@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.sling.discovery.base.connectors.ping;
+package org.apache.sling.discovery.base.connectors.ping.impl;
 
 import java.net.InetAddress;
 import java.net.URL;
@@ -31,6 +31,9 @@ import java.util.Map.Entry;
 import org.apache.sling.discovery.base.commons.ClusterViewService;
 import org.apache.sling.discovery.base.connectors.BaseConfig;
 import org.apache.sling.discovery.base.connectors.announcement.AnnouncementRegistry;
+import org.apache.sling.discovery.base.connectors.ping.ConnectorRegistry;
+import org.apache.sling.discovery.base.connectors.ping.TopologyConnectorClient;
+import org.apache.sling.discovery.base.connectors.ping.TopologyConnectorClientInformation;
 import org.osgi.framework.BundleContext;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
@@ -44,7 +47,7 @@ import org.slf4j.LoggerFactory;
  * keeps a list of outgoing connectors and is capable of
  * pinging them.
  */
-@Component(service=ConnectorRegistry.class)
+@Component(service= ConnectorRegistry.class)
 public class ConnectorRegistryImpl implements ConnectorRegistry {
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());

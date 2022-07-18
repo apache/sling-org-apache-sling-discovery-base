@@ -35,6 +35,7 @@ import org.apache.sling.commons.testing.junit.categories.Slow;
 import org.apache.sling.discovery.ClusterView;
 import org.apache.sling.discovery.InstanceDescription;
 import org.apache.sling.discovery.base.connectors.BaseConfig;
+import org.apache.sling.discovery.base.connectors.announcement.impl.AnnouncementRegistryImpl;
 import org.apache.sling.discovery.base.its.setup.TopologyHelper;
 import org.apache.sling.discovery.base.its.setup.VirtualInstanceHelper;
 import org.apache.sling.discovery.base.its.setup.mock.MockFactory;
