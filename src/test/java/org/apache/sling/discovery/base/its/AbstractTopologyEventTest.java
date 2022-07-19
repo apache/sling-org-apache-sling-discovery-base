@@ -90,7 +90,7 @@ public abstract class AbstractTopologyEventTest {
         AssertingTopologyEventListener l1 = new AssertingTopologyEventListener("instance1.l1");
         l1.addExpected(Type.TOPOLOGY_INIT);
         instance1.bindTopologyEventListener(l1);
-        logger.info("testDelayedInitEvent: instance1 created, no events expected yet. slingId= {}", instance1.slingId);
+        logger.info("testDelayedInitEvent: instance1 created, no events expected yet. slingId="+instance1.slingId);
 
         instance1.heartbeatsAndCheckView();
         Thread.sleep(1200);

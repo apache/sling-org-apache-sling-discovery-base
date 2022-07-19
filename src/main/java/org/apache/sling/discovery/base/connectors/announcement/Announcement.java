@@ -35,6 +35,7 @@ import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 import javax.json.JsonReaderFactory;
 import javax.json.JsonValue;
+import javax.json.JsonValue.ValueType;
 
 import org.apache.sling.api.resource.ModifiableValueMap;
 import org.apache.sling.api.resource.PersistenceException;
@@ -58,7 +59,7 @@ public class Announcement {
     /** the protocol version this announcement currently represents. Mismatching protocol versions are
      * used to detect incompatible topology connectors
      */
-    private static final int PROTOCOL_VERSION = 1;
+    private final static int PROTOCOL_VERSION = 1;
 
     /** the sling id of the owner of this announcement. the owner is where this announcement comes from **/
     private final String ownerId;
@@ -70,7 +71,7 @@ public class Announcement {
     private ClusterView localCluster;
 
     /** the incoming instances **/
-    private List<Announcement> incomings = new LinkedList<>();
+    private List<Announcement> incomings = new LinkedList<Announcement>();
 
     /** whether or not this annoucement was inherited (response of a connect) or incoming (the connect) **/
     private boolean inherited = false;
@@ -93,7 +94,7 @@ public class Announcement {
     
     private static final JsonReaderFactory jsonReaderFactory;
     static {
-        Map<String, Object> config = new HashMap<>();
+        Map<String, Object> config = new HashMap<String, Object>();
         config.put("org.apache.johnzon.supports-comments", true);
         jsonReaderFactory = Json.createReaderFactory(config);
     }
@@ -148,7 +149,7 @@ public class Announcement {
         }
         try{
             List<InstanceDescription> instances = localCluster.getInstances();
-            if (instances==null || instances.isEmpty()) {
+            if (instances==null || instances.size()==0) {
                 return false;
             }
             boolean isOwnerMemberOfLocalCluster = false;
@@ -367,14 +368,15 @@ public class Announcement {
 
         final JsonObject propertiesObj = anInstance.getJsonObject("properties");
         Iterator<String> it = propertiesObj.keySet().iterator();
-        Map<String, String> properties = new HashMap<>();
+        Map<String, String> properties = new HashMap<String, String>();
         while (it.hasNext()) {
             String key = it.next();
             properties.put(key, propertiesObj.getString(key));
         }
 
-        return new NonLocalInstanceDescription(
+        NonLocalInstanceDescription instance = new NonLocalInstanceDescription(
                 null, isLeader, slingId, properties);
+        return instance;
     }
 
     /** convert an instance description into a json object **/
@@ -426,7 +428,7 @@ public class Announcement {
 
     /** Returns the list of instances that are contained in this announcement **/
     public Collection<InstanceDescription> listInstances() {
-        Collection<InstanceDescription> instances = new LinkedList<>();
+        Collection<InstanceDescription> instances = new LinkedList<InstanceDescription>();
         instances.addAll(localCluster.getInstances());
 
         for (Iterator<Announcement> it = incomings.iterator(); it.hasNext();) {
@@ -453,7 +455,7 @@ public class Announcement {
         final String announcementJson = asJSON();
 		if (announcementChildResource==null) {
             final ResourceResolver resourceResolver = announcementsResource.getResourceResolver();
-            Map<String, Object> properties = new HashMap<>();
+            Map<String, Object> properties = new HashMap<String, Object>();
             properties.put("topologyAnnouncement", announcementJson);
             resourceResolver.create(announcementsResource, getPrimaryKey(), properties);
         } else {

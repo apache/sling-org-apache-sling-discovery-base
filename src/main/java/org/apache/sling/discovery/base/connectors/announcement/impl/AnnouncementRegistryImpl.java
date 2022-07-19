@@ -254,7 +254,7 @@ public class AnnouncementRegistryImpl implements AnnouncementRegistry {
             }
         }
     	if (logger.isDebugEnabled()) {
-    		logger.debug("listAnnouncementsInSameCluster: result: {}", incomingAnnouncements.size());
+    		logger.debug("listAnnouncementsInSameCluster: result: "+incomingAnnouncements.size());
     	}
         return incomingAnnouncements;
     }
@@ -316,7 +316,7 @@ public class AnnouncementRegistryImpl implements AnnouncementRegistry {
                 ownAnnouncementsCache.get(topologyAnnouncement.getOwnerId());
         if (cachedAnnouncement!=null) {
             if (logger.isDebugEnabled()) {
-                logger.debug("registerAnnouncement: got existing cached announcement for ownerId={}", topologyAnnouncement.getOwnerId());
+                logger.debug("registerAnnouncement: got existing cached announcement for ownerId="+topologyAnnouncement.getOwnerId());
             }
             try{
                 if (topologyAnnouncement.correspondsTo(cachedAnnouncement.getAnnouncement())) {
@@ -335,7 +335,7 @@ public class AnnouncementRegistryImpl implements AnnouncementRegistry {
             // resetting the cache therefore at this point already
             ownAnnouncementsCache.remove(topologyAnnouncement.getOwnerId());
         } else {
-            logger.debug("registerAnnouncement: no cached announcement yet for ownerId= {}", topologyAnnouncement.getOwnerId());
+            logger.debug("registerAnnouncement: no cached announcement yet for ownerId="+topologyAnnouncement.getOwnerId());
         }
 
         logger.debug("registerAnnouncement: getting the list of all local announcements");
@@ -361,7 +361,8 @@ public class AnnouncementRegistryImpl implements AnnouncementRegistry {
                 InstanceDescription instanceDescription = it2.next();
                 if (topologyAnnouncement.getOwnerId().equals(
                         instanceDescription.getSlingId())) {
-                    logger.info("registerAnnouncement: already have this instance attached: {}", instanceDescription.getSlingId());
+                    logger.info("registerAnnouncement: already have this instance attached: "
+                            + instanceDescription.getSlingId());
                     return -1;
                 }
             }

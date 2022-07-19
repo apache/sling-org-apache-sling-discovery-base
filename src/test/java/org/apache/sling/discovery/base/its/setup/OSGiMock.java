@@ -62,17 +62,17 @@ public class OSGiMock {
 	            if (method.getName().equals("activate")) {
 	                method.setAccessible(true);
 	                if ( method.getParameterTypes().length == 0 ) {
-	                    logger.info("activate: activating {}...", aService);
+	                    logger.info("activate: activating "+aService+"...");
 	                    method.invoke(aService, null);
-	                    logger.info("activate: activating {} done.", aService);
+	                    logger.info("activate: activating "+aService+" done.");
 	                } else if (method.getParameterTypes().length==1 && (method.getParameterTypes()[0]==ComponentContext.class)){
-	                    logger.info("activate: activating {} ...", aService);
+	                    logger.info("activate: activating "+aService+"...");
 	                    method.invoke(aService, MockFactory.mockComponentContext());
-	                    logger.info("activate: activating {} done.", aService);
+	                    logger.info("activate: activating "+aService+" done.");
 	                } else if (method.getParameterTypes().length==1 && (method.getParameterTypes()[0]==BundleContext.class)){
-	                    logger.info("activate: activating {}...", aService);
+	                    logger.info("activate: activating "+aService+"...");
 	                    method.invoke(aService, MockFactory.mockBundleContext());
-	                    logger.info("activate: activating {} done.", aService);
+	                    logger.info("activate: activating "+aService+" done.");
 	                } else {
 	                    throw new IllegalStateException("unsupported activate variant: "+method);
 	                }

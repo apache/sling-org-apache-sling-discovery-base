@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
-import java.nio.charset.StandardCharsets;
 import java.security.AlgorithmParameters;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
@@ -97,7 +96,7 @@ public class TopologyRequestValidator {
     /**
      * map of hmac keys, keyed by key number.
      */
-    private Map<Integer, Key> keys = new ConcurrentHashMap<>();
+    private Map<Integer, Key> keys = new ConcurrentHashMap<Integer, Key>();
 
     /**
      * The shared key.
@@ -157,8 +156,21 @@ public class TopologyRequestValidator {
             } catch (InvalidKeyException e) {
                 e.printStackTrace();
                 throw new IOException("Unable to Encrypt Message " + e.getMessage());
-            } catch (IllegalBlockSizeException | BadPaddingException | UnsupportedEncodingException | NoSuchAlgorithmException
-                    | NoSuchPaddingException | JsonException | InvalidKeySpecException | InvalidParameterSpecException e) {
+            } catch (IllegalBlockSizeException e) {
+                throw new IOException("Unable to Encrypt Message " + e.getMessage());
+            } catch (BadPaddingException e) {
+                throw new IOException("Unable to Encrypt Message " + e.getMessage());
+            } catch (UnsupportedEncodingException e) {
+                throw new IOException("Unable to Encrypt Message " + e.getMessage());
+            } catch (NoSuchAlgorithmException e) {
+                throw new IOException("Unable to Encrypt Message " + e.getMessage());
+            } catch (NoSuchPaddingException e) {
+                throw new IOException("Unable to Encrypt Message " + e.getMessage());
+            } catch (JsonException e) {
+                throw new IOException("Unable to Encrypt Message " + e.getMessage());
+            } catch (InvalidKeySpecException e) {
+                throw new IOException("Unable to Encrypt Message " + e.getMessage());
+            } catch (InvalidParameterSpecException e) {
                 throw new IOException("Unable to Encrypt Message " + e.getMessage());
             }
 
@@ -215,9 +227,21 @@ public class TopologyRequestValidator {
                         if (json.containsKey("payload")) {
                             return decrypt(json.getJsonArray("payload"));
                         }
-                    } catch (JsonException | InvalidKeyException | IllegalBlockSizeException | BadPaddingException
-                            | NoSuchAlgorithmException | NoSuchPaddingException | InvalidAlgorithmParameterException
-                            | InvalidKeySpecException e) {
+                    } catch (JsonException e) {
+                        throw new IOException("Encrypted Message is in the correct json format");
+                    } catch (InvalidKeyException e) {
+                        throw new IOException("Encrypted Message is in the correct json format");
+                    } catch (IllegalBlockSizeException e) {
+                        throw new IOException("Encrypted Message is in the correct json format");
+                    } catch (BadPaddingException e) {
+                        throw new IOException("Encrypted Message is in the correct json format");
+                    } catch (NoSuchAlgorithmException e) {
+                        throw new IOException("Encrypted Message is in the correct json format");
+                    } catch (NoSuchPaddingException e) {
+                        throw new IOException("Encrypted Message is in the correct json format");
+                    } catch (InvalidAlgorithmParameterException e) {
+                        throw new IOException("Encrypted Message is in the correct json format");
+                    } catch (InvalidKeySpecException e) {
                         throw new IOException("Encrypted Message is in the correct json format");
                     }
 
@@ -296,8 +320,10 @@ public class TopologyRequestValidator {
     private String hash(String toHash) {
         try {
             MessageDigest m = MessageDigest.getInstance("SHA-256");
-            return new String(Base64.encodeBase64(m.digest(toHash.getBytes(StandardCharsets.UTF_8))), StandardCharsets.UTF_8);
+            return new String(Base64.encodeBase64(m.digest(toHash.getBytes("UTF-8"))), "UTF-8");
         } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e.getMessage(), e);
+        } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e.getMessage(), e);
         }
     }
@@ -313,7 +339,13 @@ public class TopologyRequestValidator {
         try {
             int keyNo = getCurrentKey();
             return keyNo + "/" + hmac(keyNo, bodyHash);
-        } catch (UnsupportedEncodingException | InvalidKeyException | IllegalStateException | NoSuchAlgorithmException e) {
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e.getMessage(), e);
+        } catch (InvalidKeyException e) {
+            throw new RuntimeException(e.getMessage(), e);
+        } catch (IllegalStateException e) {
+            throw new RuntimeException(e.getMessage(), e);
+        } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e.getMessage(), e);
         }
     }
@@ -340,7 +372,13 @@ public class TopologyRequestValidator {
                 parts[1].getBytes("UTF-8"));
         } catch (IllegalArgumentException e) {
             return false;
-        } catch (InvalidKeyException | UnsupportedEncodingException | IllegalStateException | NoSuchAlgorithmException e) {
+        } catch (InvalidKeyException e) {
+            throw new RuntimeException(e.getMessage(), e);
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e.getMessage(), e);
+        } catch (IllegalStateException e) {
+            throw new RuntimeException(e.getMessage(), e);
+        } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e.getMessage(), e);
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage(), e);
@@ -376,7 +414,7 @@ public class TopologyRequestValidator {
      */
     private String hmac(int keyNo, String bodyHash) throws InvalidKeyException,
             UnsupportedEncodingException, IllegalStateException, NoSuchAlgorithmException {
-        return new String(Base64.encodeBase64(getMac(keyNo).doFinal(bodyHash.getBytes(StandardCharsets.UTF_8))),
+        return new String(Base64.encodeBase64(getMac(keyNo).doFinal(bodyHash.getBytes("UTF-8"))),
             "UTF-8");
     }
 
@@ -398,8 +436,8 @@ public class TopologyRequestValidator {
             BadPaddingException, UnsupportedEncodingException, InvalidKeyException,
             NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException, InvalidKeySpecException {
         Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-        cipher.init(Cipher.DECRYPT_MODE, getCipherKey(Base64.decodeBase64(jsonArray.get(0).toString().getBytes(StandardCharsets.UTF_8))), new IvParameterSpec(Base64.decodeBase64(jsonArray.get(1).toString().getBytes(StandardCharsets.UTF_8))));
-        return new String(cipher.doFinal(Base64.decodeBase64(jsonArray.get(2).toString().getBytes(StandardCharsets.UTF_8))));
+        cipher.init(Cipher.DECRYPT_MODE, getCipherKey(Base64.decodeBase64(jsonArray.get(0).toString().getBytes("UTF-8"))), new IvParameterSpec(Base64.decodeBase64(jsonArray.get(1).toString().getBytes("UTF-8"))));
+        return new String(cipher.doFinal(Base64.decodeBase64(jsonArray.get(2).toString().getBytes("UTF-8"))));
     }
 
     /**
@@ -424,10 +462,10 @@ public class TopologyRequestValidator {
         random.nextBytes(salt);
         cipher.init(Cipher.ENCRYPT_MODE, getCipherKey(salt));
         AlgorithmParameters params = cipher.getParameters();
-        List<String> encrypted = new ArrayList<>();
+        List<String> encrypted = new ArrayList<String>();
         encrypted.add(new String(Base64.encodeBase64(salt)));
         encrypted.add(new String(Base64.encodeBase64(params.getParameterSpec(IvParameterSpec.class).getIV())));
-        encrypted.add(new String(Base64.encodeBase64(cipher.doFinal(payload.getBytes(StandardCharsets.UTF_8)))));
+        encrypted.add(new String(Base64.encodeBase64(cipher.doFinal(payload.getBytes("UTF-8")))));
         return encrypted;
     }
 
@@ -460,7 +498,7 @@ public class TopologyRequestValidator {
             return keys.get(keyNo);
         }
         trimKeys();
-        SecretKeySpec key = new SecretKeySpec(hash(sharedKey + keyNo).getBytes(StandardCharsets.UTF_8),
+        SecretKeySpec key = new SecretKeySpec(hash(sharedKey + keyNo).getBytes("UTF-8"),
             "HmacSHA256");
         keys.put(keyNo, key);
         return key;
@@ -475,7 +513,7 @@ public class TopologyRequestValidator {
      */
     private void trimKeys() {
         if (keys.size() > MAXKEYS) {
-            List<Integer> keysKeys = new ArrayList<>(keys.keySet());
+            List<Integer> keysKeys = new ArrayList<Integer>(keys.keySet());
             Collections.sort(keysKeys);
             for (Integer k : keysKeys) {
                 if (keys.size() < MINKEYS) {
@@ -543,7 +581,7 @@ public class TopologyRequestValidator {
             }
         } else {
         	// otherwise the server sent plaintext:
-        	return IOUtils.toString(response.getEntity().getContent(), StandardCharsets.UTF_8);
+        	return IOUtils.toString(response.getEntity().getContent(), "UTF-8");
         }
     }
 
