@@ -162,7 +162,7 @@ public abstract class AbstractClusterTest {
     }
 
     private void doTestLeader(String slingId1, String slingId2) throws Throwable {
-        logger.info("doTestLeader("+slingId1+","+slingId2+"): start");
+        logger.info("doTestLeader({}, {}): start", slingId1, slingId2);
     	// stop 1 and 2 and create them with a lower heartbeat timeout
     	instance2.stopViewChecker();
     	instance1.stopViewChecker();

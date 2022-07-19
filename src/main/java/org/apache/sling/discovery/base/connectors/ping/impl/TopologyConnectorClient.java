@@ -21,6 +21,7 @@ package org.apache.sling.discovery.base.connectors.ping.impl;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.UUID;
@@ -159,7 +160,7 @@ public class TopologyConnectorClient implements
     	}
         final String uri = connectorUrl.toString()+"."+clusterViewService.getSlingId()+".json";
     	if (logger.isDebugEnabled()) {
-    		logger.debug("ping: connectorUrl=" + connectorUrl + ", complete uri=" + uri);
+    		logger.debug("ping: connectorUrl= {}, complete uri= {}", connectorUrl, uri);
     	}
     	final HttpClientContext clientContext = HttpClientContext.create();
     	final CloseableHttpClient httpClient = createHttpClient();
@@ -190,7 +191,7 @@ public class TopologyConnectorClient implements
                         .getLocalClusterView();
             } catch (UndefinedClusterViewException e) {
                 // SLING-5030 : then we cannot ping
-                logger.warn("ping: no clusterView available at the moment, cannot ping others now: "+e);
+                logger.warn("ping: no clusterView available at the moment, cannot ping others now: {}", e);
                 return;
             }
             topologyAnnouncement.setLocalCluster(clusterView);
@@ -198,30 +199,27 @@ public class TopologyConnectorClient implements
                 logger.debug("ping: sending a resetBackoff");
                 topologyAnnouncement.setResetBackoff(true);
             }
-            announcementRegistry.addAllExcept(topologyAnnouncement, clusterView, new AnnouncementFilter() {
-                
-                public boolean accept(final String receivingSlingId, final Announcement announcement) {
-                    // filter out announcements that are of old cluster instances
-                    // which I dont really have in my cluster view at the moment
-                    final Iterator<InstanceDescription> it = 
-                            clusterView.getInstances().iterator();
-                    while(it.hasNext()) {
-                        final InstanceDescription instance = it.next();
-                        if (instance.getSlingId().equals(receivingSlingId)) {
-                            // then I have the receiving instance in my cluster view
-                            // all fine then
-                            return true;
-                        }
+            announcementRegistry.addAllExcept(topologyAnnouncement, clusterView, (receivingSlingId, announcement) -> {
+                // filter out announcements that are of old cluster instances
+                // which I dont really have in my cluster view at the moment
+                final Iterator<InstanceDescription> it =
+                        clusterView.getInstances().iterator();
+                while(it.hasNext()) {
+                    final InstanceDescription instance = it.next();
+                    if (instance.getSlingId().equals(receivingSlingId)) {
+                        // then I have the receiving instance in my cluster view
+                        // all fine then
+                        return true;
                     }
-                    // looks like I dont have the receiving instance in my cluster view
-                    // then I should also not propagate that announcement anywhere
-                    return false;
                 }
+                // looks like I dont have the receiving instance in my cluster view
+                // then I should also not propagate that announcement anywhere
+                return false;
             });
             final String p = requestValidator.encodeMessage(topologyAnnouncement.asJSON());
             
             if (logger.isDebugEnabled()) {
-                logger.debug("ping: topologyAnnouncement json is: " + p);
+                logger.debug("ping: topologyAnnouncement json is: {}", p);
             }
             requestValidator.trustMessage(putRequest, p);
             if (config.isGzipConnectorRequestsEnabled()) {
@@ -230,14 +228,14 @@ public class TopologyConnectorClient implements
                 // and gzip the body:
                 final ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 final GZIPOutputStream gzipOut = new GZIPOutputStream(baos);
-                gzipOut.write(p.getBytes("UTF-8"));
+                gzipOut.write(p.getBytes(StandardCharsets.UTF_8));
                 gzipOut.close();
                 final byte[] gzippedEncodedJson = baos.toByteArray();
                 putRequest.setEntity(new ByteArrayEntity(gzippedEncodedJson, ContentType.APPLICATION_JSON));
                 lastRequestEncoding = "gzip";
             } else {
                 // otherwise plaintext:
-            	final StringEntity plaintext = new StringEntity(p, "UTF-8");
+            	final StringEntity plaintext = new StringEntity(p, StandardCharsets.UTF_8);
             	plaintext.setContentType(ContentType.APPLICATION_JSON.getMimeType());
             	putRequest.setEntity(plaintext);
                 lastRequestEncoding = "plaintext";
@@ -247,8 +245,7 @@ public class TopologyConnectorClient implements
             putRequest.addHeader("Accept-Encoding", "gzip");
             final CloseableHttpResponse response = httpClient.execute(putRequest, clientContext);
         	if (logger.isDebugEnabled()) {
-	            logger.debug("ping: done. code=" + response.getStatusLine().getStatusCode() + " - "
-	                    + response.getStatusLine().getReasonPhrase());
+	            logger.debug("ping: done. code= {} - {}", response.getStatusLine().getStatusCode(), response.getStatusLine().getReasonPhrase());
         	}
             lastStatusCode = response.getStatusLine().getStatusCode();
             lastResponseEncoding = null;
@@ -262,7 +259,7 @@ public class TopologyConnectorClient implements
                 }
                 final String responseBody = requestValidator.decodeMessage(putRequest.getURI().getPath(), response); // limiting to 16MB, should be way enough
             	if (logger.isDebugEnabled()) {
-            		logger.debug("ping: response body=" + responseBody);
+            		logger.debug("ping: response body= {}", responseBody.replaceAll("[\n\r\t]", "_"));
             	}
                 if (responseBody!=null && responseBody.length()>0) {
                     Announcement inheritedAnnouncement = Announcement
@@ -273,15 +270,14 @@ public class TopologyConnectorClient implements
                         
                         /* minus 1 sec to avoid slipping the interval by a few millis */
                         this.backoffPeriodEnd = System.currentTimeMillis() + (1000 * backoffInterval) - 1000;
-                        logger.debug("ping: servlet instructed to backoff: backoffInterval="+backoffInterval+", resulting in period end of "+new Date(backoffPeriodEnd));
+                        logger.debug("ping: servlet instructed to backoff: backoffInterval={}, resulting in period end of {}", backoffInterval, new Date(backoffPeriodEnd));
                     } else {
                         logger.debug("ping: servlet did not instruct any backoff-ing at this stage");
                         this.backoffPeriodEnd = -1;
                     }
                     if (inheritedAnnouncement.isLoop()) {
                     	if (logger.isDebugEnabled()) {
-	                        logger.debug("ping: connector response indicated a loop detected. not registering this announcement from "+
-	                                    inheritedAnnouncement.getOwnerId());
+	                        logger.debug("ping: connector response indicated a loop detected. not registering this announcement from {}", inheritedAnnouncement.getOwnerId());
                     	}
                     	if (inheritedAnnouncement.getOwnerId().equals(clusterViewService.getSlingId())) {
                     		// SLING-3316 : local-loop detected. Check config to see if we should stop this connector
@@ -296,8 +292,7 @@ public class TopologyConnectorClient implements
                         if (announcementRegistry
                                 .registerAnnouncement(inheritedAnnouncement)==-1) {
                         	if (logger.isDebugEnabled()) {
-	                            logger.debug("ping: connector response is from an instance which I already see in my topology"
-	                                    + inheritedAnnouncement);
+	                            logger.debug("ping: connector response is from an instance which I already see in my topology {}", inheritedAnnouncement);
                         	}
                             statusDetails = "receiving side is seeing me via another path (connector or cluster) already (loop)";
                             return;
@@ -317,15 +312,15 @@ public class TopologyConnectorClient implements
         	// SLING-2882 : set/check the suppressPingWarnings_ flag
         	if (suppressPingWarnings_) {
         		if (logger.isDebugEnabled()) {
-        			logger.debug("ping: got IOException: " + e + ", uri=" + uri);
+        			logger.debug("ping: got IOException: {}, uri={}", e, uri);
         		}
         	} else {
         		suppressPingWarnings_ = true;
-    			logger.warn("ping: got IOException [suppressing further warns]: " + e + ", uri=" + uri);
+    			logger.warn("ping: got IOException [suppressing further warns]: {}, uri={}", e, uri);
         	}
             statusDetails = e.toString();
         } catch (JsonException e) {
-            logger.warn("ping: got JSONException: " + e);
+            logger.warn("ping: got JSONException: {}", e);
             statusDetails = e.toString();
         } catch (RuntimeException re) {
             logger.warn("ping: got RuntimeException: " + re, re);
@@ -447,7 +442,7 @@ public class TopologyConnectorClient implements
     public void disconnect() {
         final String uri = connectorUrl.toString()+"."+clusterViewService.getSlingId()+".json";
     	if (logger.isDebugEnabled()) {
-    		logger.debug("disconnect: connectorUrl=" + connectorUrl + ", complete uri="+uri);
+    		logger.debug("disconnect: connectorUrl={}, complete uri={}", connectorUrl, uri);
     	}
 
         if (lastInheritedAnnouncement != null) {
@@ -477,13 +472,13 @@ public class TopologyConnectorClient implements
             requestValidator.trustMessage(deleteRequest, null);
             final CloseableHttpResponse response = httpClient.execute(deleteRequest, clientContext);
         	if (logger.isDebugEnabled()) {
-	            logger.debug("disconnect: done. code=" + response.getStatusLine().getStatusCode()
-	                    + " - " + response.getStatusLine().getReasonPhrase());
+	            logger.debug("disconnect: done. code={} - {}", response.getStatusLine().getStatusCode(),
+                        response.getStatusLine().getReasonPhrase());
         	}
             // ignoring the actual statuscode though as there's little we can
             // do about it after this point
         } catch (IOException e) {
-            logger.warn("disconnect: got IOException: " + e);
+            logger.warn("disconnect: got IOException: {}", e);
         } catch (RuntimeException re) {
             logger.error("disconnect: got RuntimeException: " + re, re);
         } finally {

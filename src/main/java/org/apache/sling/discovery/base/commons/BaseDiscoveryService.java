@@ -36,7 +36,7 @@ import org.slf4j.LoggerFactory;
  */
 public abstract class BaseDiscoveryService implements DiscoveryService {
 
-    private final static Logger logger = LoggerFactory.getLogger(BaseDiscoveryService.class);
+    private static final Logger logger = LoggerFactory.getLogger(BaseDiscoveryService.class);
 
     /** the old view previously valid and sent to the TopologyEventListeners **/
     private DefaultTopologyView oldView;
@@ -81,7 +81,7 @@ public abstract class BaseDiscoveryService implements DiscoveryService {
             // treat it as being cut off from the entire topology, ie we don't
             // update the announcements but just return
             // the previous oldView marked as !current
-            logger.info("getTopology: undefined cluster view: "+e.getReason()+"] "+e);
+            logger.info("getTopology: undefined cluster view: {} ] {}", e.getReason(), e);
             oldView.setNotCurrent();
             if (e.getReason()==Reason.ISOLATED_FROM_TOPOLOGY) {
                 handleIsolatedFromTopology();

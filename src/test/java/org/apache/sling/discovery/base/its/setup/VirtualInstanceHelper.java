@@ -38,7 +38,7 @@ public class VirtualInstanceHelper {
         Session session = resourceResolverFactory
                 .getServiceResourceResolver(null).adaptTo(Session.class);
         logger.info("dumpRepo: ====== START =====");
-        logger.info("dumpRepo: repo = " + session.getRepository());
+        logger.info("dumpRepo: repo = {}", session.getRepository());
 
         dump(session.getRootNode());
 

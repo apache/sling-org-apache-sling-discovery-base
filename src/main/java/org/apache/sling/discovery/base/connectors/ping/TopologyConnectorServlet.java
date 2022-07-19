@@ -134,7 +134,7 @@ public class TopologyConnectorServlet extends HttpServlet {
                 try {
                     whitelistEntry = new SubnetWhitelistEntry(aWhitelistEntry);
                 } catch (Exception e) {
-                    logger.error("activate: wrongly formatted CIDR subnet definition. Expected eg '1.2.3.4/24'. ignoring: " + aWhitelistEntry);
+                    logger.error("activate: wrongly formatted CIDR subnet definition. Expected eg '1.2.3.4/24'. ignoring: {}", aWhitelistEntry);
                     continue;
                 }
             } else if (aWhitelistEntry.contains(".") && aWhitelistEntry.contains(" ")) {
@@ -145,13 +145,13 @@ public class TopologyConnectorServlet extends HttpServlet {
                     if (st.hasMoreTokens()) {
                         final String mask = st.nextToken();
                         if (st.hasMoreTokens()) {
-                            logger.error("activate: wrongly formatted ip subnet definition. Expected '10.1.2.3 255.0.0.0'. Ignoring: " + aWhitelistEntry);
+                            logger.error("activate: wrongly formatted ip subnet definition. Expected '10.1.2.3 255.0.0.0'. Ignoring: {}", aWhitelistEntry);
                             continue;
                         }
                         whitelistEntry = new SubnetWhitelistEntry(ip, mask);
                     }
                 } catch (Exception e) {
-                    logger.error("activate: wrongly formatted ip subnet definition. Expected '10.1.2.3 255.0.0.0'. Ignoring: " + aWhitelistEntry);
+                    logger.error("activate: wrongly formatted ip subnet definition. Expected '10.1.2.3 255.0.0.0'. Ignoring: {}", aWhitelistEntry);
                     continue;
                 }
             }
@@ -162,7 +162,7 @@ public class TopologyConnectorServlet extends HttpServlet {
                     plaintextWhitelist.add(aWhitelistEntry);
                 }
             }
-            logger.info("activate: adding whitelist entry: " + aWhitelistEntry);
+            logger.info("activate: adding whitelist entry: {}", aWhitelistEntry);
             if (whitelistEntry != null) {
                 whitelist.add(whitelistEntry);
             }
@@ -213,8 +213,10 @@ public class TopologyConnectorServlet extends HttpServlet {
 
         String topologyAnnouncementJSON = requestValidator.decodeMessage(request);
 
-        // javasecurity:S5145: Replace pattern-breaking characters
-        logger.debug("doPost: incoming topology announcement is: " + topologyAnnouncementJSON.replaceAll("[\n\r\t]", "_"));
+        if (logger.isDebugEnabled()) {
+            // javasecurity:S5145: Replace pattern-breaking characters
+            logger.debug("doPost: incoming topology announcement is: " + topologyAnnouncementJSON.replaceAll("[\n\r\t]", "_"));
+        }
 
         final Announcement incomingTopologyAnnouncement;
         try {
@@ -238,15 +240,13 @@ public class TopologyConnectorServlet extends HttpServlet {
             long backoffInterval = -1;
             ClusterView clusterView = clusterViewService.getLocalClusterView();
             if (!incomingTopologyAnnouncement.isCorrectVersion()) {
-                logger.warn("doPost: rejecting an announcement from an incompatible connector protocol version: "
-                        + incomingTopologyAnnouncement);
+                logger.warn("doPost: rejecting an announcement from an incompatible connector protocol version: {}", incomingTopologyAnnouncement);
                 response.sendError(HttpServletResponse.SC_BAD_REQUEST);
                 return;
             } else if (ClusterViewHelper.contains(clusterView, incomingTopologyAnnouncement
                     .getOwnerId())) {
                 if (logger.isDebugEnabled()) {
-                    logger.debug("doPost: rejecting an announcement from an instance that is part of my cluster: "
-                            + incomingTopologyAnnouncement);
+                    logger.debug("doPost: rejecting an announcement from an instance that is part of my cluster: {}", incomingTopologyAnnouncement);
                 }
                 // marking as 'loop'
                 replyAnnouncement.setLoop(true);
@@ -254,8 +254,7 @@ public class TopologyConnectorServlet extends HttpServlet {
             } else if (ClusterViewHelper.containsAny(clusterView, incomingTopologyAnnouncement
                     .listInstances())) {
                 if (logger.isDebugEnabled()) {
-                    logger.debug("doPost: rejecting an announcement as it contains instance(s) that is/are part of my cluster: "
-                            + incomingTopologyAnnouncement);
+                    logger.debug("doPost: rejecting an announcement as it contains instance(s) that is/are part of my cluster: {}", incomingTopologyAnnouncement);
                 }
                 // marking as 'loop'
                 replyAnnouncement.setLoop(true);
@@ -264,12 +263,11 @@ public class TopologyConnectorServlet extends HttpServlet {
                 backoffInterval = announcementRegistry
                         .registerAnnouncement(incomingTopologyAnnouncement);
                 if (logger.isDebugEnabled()) {
-                    logger.debug("doPost: backoffInterval after registration: " + backoffInterval);
+                    logger.debug("doPost: backoffInterval after registration: {}", backoffInterval);
                 }
                 if (backoffInterval == -1) {
                     if (logger.isDebugEnabled()) {
-                        logger.debug("doPost: rejecting an announcement from an instance that I already see in my topology: "
-                                + incomingTopologyAnnouncement);
+                        logger.debug("doPost: rejecting an announcement from an instance that I already see in my topology: {}", incomingTopologyAnnouncement);
                     }
                     // marking as 'loop'
                     replyAnnouncement.setLoop(true);
@@ -289,7 +287,9 @@ public class TopologyConnectorServlet extends HttpServlet {
             }
             if (backoffInterval > 0) {
                 replyAnnouncement.setBackoffInterval(backoffInterval);
-                logger.debug("doPost: backoffInterval for client set to " + replyAnnouncement.getBackoffInterval());
+                if (logger.isDebugEnabled()) {
+                    logger.debug("doPost: backoffInterval for client set to {}", replyAnnouncement.getBackoffInterval());
+                }
             }
             final String p = requestValidator.encodeMessage(replyAnnouncement.asJSON());
             requestValidator.trustMessage(response, request, p);
@@ -310,10 +310,10 @@ public class TopologyConnectorServlet extends HttpServlet {
                 pw.flush();
             }
         } catch (JsonException e) {
-            logger.error("doPost: Got a JSONException: " + e, e);
+            logger.error("doPost: Got a JSONException: {}", e);
             response.sendError(500);
         } catch (UndefinedClusterViewException e) {
-            logger.warn("doPost: no clusterView available at the moment - cannot handle connectors now: " + e);
+            logger.warn("doPost: no clusterView available at the moment - cannot handle connectors now" + e, e);
             response.sendError(503); // "please retry, but atm I can't help since I'm isolated"
         }
 
@@ -326,8 +326,7 @@ public class TopologyConnectorServlet extends HttpServlet {
         if (config.isHmacEnabled()) {
             final boolean isTrusted = requestValidator.isTrusted(request);
             if (!isTrusted) {
-                logger.info("isWhitelisted: rejecting distrusted " + request.getRemoteAddr()
-                        + ", " + request.getRemoteHost());
+                logger.info("isWhitelisted: rejecting distrusted {}, {}", request.getRemoteAddr(), request.getRemoteHost());
             }
             return isTrusted;
         }
@@ -343,7 +342,7 @@ public class TopologyConnectorServlet extends HttpServlet {
                 return true;
             }
         }
-        logger.info("isWhitelisted: rejecting " + request.getRemoteAddr() + ", " + request.getRemoteHost());
+        logger.info("isWhitelisted: rejecting {}, {}", request.getRemoteAddr(), request.getRemoteHost());
         return false;
     }
 

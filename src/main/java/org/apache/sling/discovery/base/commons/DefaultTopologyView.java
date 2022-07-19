@@ -42,7 +42,7 @@ public class DefaultTopologyView extends BaseTopologyView {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     /** the instances that are part of this topology **/
-    private final Set<InstanceDescription> instances = new HashSet<InstanceDescription>();
+    private final Set<InstanceDescription> instances = new HashSet<>();
 
     private String localClusterSyncTokenId;
 
@@ -119,7 +119,7 @@ public class DefaultTopologyView extends BaseTopologyView {
 
     @Override
     public boolean equals(final Object obj) {
-        if (obj == null || !(obj instanceof DefaultTopologyView)) {
+        if (!(obj instanceof DefaultTopologyView)) {
             return false;
         }
         DefaultTopologyView other = (DefaultTopologyView) obj;
@@ -169,8 +169,8 @@ public class DefaultTopologyView extends BaseTopologyView {
         if (localClusterView == null) {
             throw new IllegalArgumentException("localClusterView must not be null");
         }
-        final List<InstanceDescription> instances = localClusterView.getInstances();
-        addInstances(instances);
+        final List<InstanceDescription> instancesList = localClusterView.getInstances();
+        addInstances(instancesList);
         
         this.localClusterSyncTokenId = localClusterView.getLocalClusterSyncTokenId();
     }
@@ -198,8 +198,7 @@ public class DefaultTopologyView extends BaseTopologyView {
                     // copying of data from one cluster to the next (which will also
                     // be cleaned up by SLING-4139 though)
                     // so the fix for avoiding duplicate instances is really SLING-4139
-                    logger.info("addInstance: cannot add same instance twice: "
-                            + instanceDescription);
+                    logger.info("addInstance: cannot add same instance twice: {}", instanceDescription);
                     continue outerLoop;
                 }
             }
@@ -214,7 +213,7 @@ public class DefaultTopologyView extends BaseTopologyView {
         if (picker == null) {
             throw new IllegalArgumentException("picker must not be null");
         }
-        Set<InstanceDescription> result = new HashSet<InstanceDescription>();
+        Set<InstanceDescription> result = new HashSet<>();
         for (Iterator<InstanceDescription> it = instances.iterator(); it
                 .hasNext();) {
             InstanceDescription instance = it.next();
@@ -229,7 +228,7 @@ public class DefaultTopologyView extends BaseTopologyView {
      * @see org.apache.sling.discovery.TopologyView#getClusterViews()
      */
     public Set<ClusterView> getClusterViews() {
-        Set<ClusterView> result = new HashSet<ClusterView>();
+        Set<ClusterView> result = new HashSet<>();
         for (Iterator<InstanceDescription> it = instances.iterator(); it
                 .hasNext();) {
             InstanceDescription instance = it.next();
@@ -238,7 +237,7 @@ public class DefaultTopologyView extends BaseTopologyView {
                 result.add(cluster);
             }
         }
-        return new HashSet<ClusterView>(result);
+        return new HashSet<>(result);
     }
 
     @Override

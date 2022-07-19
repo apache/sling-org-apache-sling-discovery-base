@@ -117,10 +117,10 @@ public class AssertingTopologyEventListener implements TopologyEventListener {
         }
         }
         } catch(RuntimeException re) {
-            logger.error("RuntimeException: "+re, re);
+            logger.error("RuntimeException: {}", re);
             throw re;
         } catch(AssertionError e) {
-            logger.error("AssertionError: "+e, e);
+            logger.error("AssertionError: {}", e);
             throw e;
         }
         events_.add(event);

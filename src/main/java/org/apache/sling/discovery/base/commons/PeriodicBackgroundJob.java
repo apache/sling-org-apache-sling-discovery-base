@@ -29,7 +29,7 @@ import org.slf4j.LoggerFactory;
  */
 public class PeriodicBackgroundJob implements Runnable {
 
-    private final static Logger logger = LoggerFactory.getLogger(PeriodicBackgroundJob.class);
+    private static final Logger logger = LoggerFactory.getLogger(PeriodicBackgroundJob.class);
 
     private final long intervalSeconds;
     private final Runnable runnable;

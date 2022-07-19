@@ -36,10 +36,7 @@ public class WildcardWhitelistEntry implements WhitelistEntry {
         if (WildcardHelper.matchesWildcard(request.getRemoteAddr(), hostOrAddressWithWildcard)) {
             return true;
         }
-        if (WildcardHelper.matchesWildcard(request.getRemoteHost(), hostOrAddressWithWildcard)) {
-            return true;
-        }
-        return false;
+        return WildcardHelper.matchesWildcard(request.getRemoteHost(), hostOrAddressWithWildcard);
     }
 
 }

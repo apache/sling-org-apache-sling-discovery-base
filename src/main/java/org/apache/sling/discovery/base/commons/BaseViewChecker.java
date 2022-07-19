@@ -121,7 +121,7 @@ public abstract class BaseViewChecker implements ViewChecker, Runnable {
     protected void doActivate() {
         try {
             final long interval = getConnectorConfig().getConnectorPingInterval();
-            logger.info("doActivate: starting periodic connectorPing job for "+slingId+" with interval "+interval+" sec.");
+            logger.info("doActivate: starting periodic connectorPing job for {} with interval {} sec.", slingId, interval);
             periodicPingJob = new PeriodicBackgroundJob(interval, NAME, this);
         } catch (Exception e) {
             logger.error("doActivate: Could not start connectorPing runner: " + e, e);
@@ -155,7 +155,7 @@ public abstract class BaseViewChecker implements ViewChecker, Runnable {
 
     @Override
     public void heartbeatAndCheckView() {
-        logger.debug("heartbeatAndCheckView: start. [for slingId="+slingId+"]");
+        logger.debug("heartbeatAndCheckView: start. [for slingId={}]", slingId);
         synchronized(lock) {
         	if (!activated) {
         		// SLING:2895: avoid heartbeats if not activated
@@ -169,7 +169,7 @@ public abstract class BaseViewChecker implements ViewChecker, Runnable {
             // check the view
             doCheckView();
         }
-        logger.debug("heartbeatAndCheckView: end. [for slingId="+slingId+"]");
+        logger.debug("heartbeatAndCheckView: end. [for slingId={}]", slingId);
     }
 
     /** Trigger the issuance of the next heartbeat asap instead of at next heartbeat interval **/
@@ -183,7 +183,7 @@ public abstract class BaseViewChecker implements ViewChecker, Runnable {
             logger.debug("triggerAsyncConnectorPing: firing job to trigger heartbeat");
             getScheduler().schedule(this, getScheduler().NOW().name(NAME+UUID.randomUUID()));
         } catch (Exception e) {
-            logger.info("triggerAsyncConnectorPing: Could not trigger heartbeat: " + e);
+            logger.info("triggerAsyncConnectorPing: Could not trigger heartbeat: {}", e);
         }
     }
 
@@ -210,7 +210,7 @@ public abstract class BaseViewChecker implements ViewChecker, Runnable {
             return;
         }
         if (logger.isDebugEnabled()) {
-            logger.debug("issueConnectorPings: pinging outgoing topology connectors (if there is any) for "+slingId);
+            logger.debug("issueConnectorPings: pinging outgoing topology connectors (if there is any) for {}", slingId);
         }
         getConnectorRegistry().pingOutgoingConnectors(forcePing);
         forcePing = false;

@@ -20,6 +20,7 @@ package org.apache.sling.discovery.base.connectors.announcement;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -125,12 +126,12 @@ public class AnnouncementRegistryImplTest {
         
         Announcement ann = new Announcement(slingId);
         assertFalse(ann.isValid());
-        assertFalse(registry.registerAnnouncement(ann)!=-1);
+        assertEquals(registry.registerAnnouncement(ann), -1);
         
         DefaultClusterView localCluster = new DefaultClusterView(UUID.randomUUID().toString());
         ann.setLocalCluster(localCluster);
         assertFalse(ann.isValid());
-        assertFalse(registry.registerAnnouncement(ann)!=-1);
+        assertEquals(registry.registerAnnouncement(ann), -1);
 
         try{
             registry.listInstances(localCluster);
@@ -142,7 +143,7 @@ public class AnnouncementRegistryImplTest {
         DefaultInstanceDescription instance = TopologyHelper.createInstanceDescription(ann.getOwnerId(), true, localCluster);
         assertEquals(instance.getSlingId(), ann.getOwnerId());
         assertTrue(ann.isValid());
-        assertTrue(registry.registerAnnouncement(ann)!=-1);
+        assertNotEquals(registry.registerAnnouncement(ann), -1);
         
         assertEquals(1, registry.listInstances(localCluster).size());
         
@@ -152,7 +153,7 @@ public class AnnouncementRegistryImplTest {
         registry.unregisterAnnouncement(ann.getOwnerId());
         assertEquals(0, registry.listInstances(localCluster).size());
         assertTrue(ann.isValid());
-        assertTrue(registry.registerAnnouncement(ann)!=-1);
+        assertNotEquals(registry.registerAnnouncement(ann), -1);
         assertEquals(1, registry.listInstances(localCluster).size());
 
         if (includeFinalExpiryCheck) {
@@ -275,10 +276,10 @@ public class AnnouncementRegistryImplTest {
         Announcement ann1 = createAnnouncement(cluster1, 0, true);
         Announcement ann2 = createAnnouncement(cluster2, 1, true);
         Announcement ann3 = createAnnouncement(cluster3, 1, false);
-        
-        assertTrue(registry.registerAnnouncement(ann1)!=-1);
-        assertTrue(registry.registerAnnouncement(ann2)!=-1);
-        assertTrue(registry.registerAnnouncement(ann3)!=-1);
+
+        assertNotEquals(registry.registerAnnouncement(ann1), -1);
+        assertNotEquals(registry.registerAnnouncement(ann2), -1);
+        assertNotEquals(registry.registerAnnouncement(ann3), -1);
         assertTrue(registry.hasActiveAnnouncement(cluster1.getInstances().get(0).getSlingId()));
         assertTrue(registry.hasActiveAnnouncement(cluster2.getInstances().get(1).getSlingId()));
         assertTrue(registry.hasActiveAnnouncement(cluster3.getInstances().get(1).getSlingId()));
@@ -302,7 +303,7 @@ public class AnnouncementRegistryImplTest {
             registry.addAllExcept(testAnn, myCluster, null);
             assertEquals(13, testAnn.listInstances().size());
         }
-        assertTrue(registry.registerAnnouncement(ann3)!=-1);
+        assertNotEquals(registry.registerAnnouncement(ann3), -1);
         {
             Announcement testAnn = createAnnouncement(myCluster, 0, false);
             assertEquals(1, testAnn.listInstances().size());
@@ -359,9 +360,9 @@ public class AnnouncementRegistryImplTest {
         AnnouncementRegistryImpl registry3 = AnnouncementRegistryImpl.testConstructorAndActivate(
                 resourceResolverFactory, new DummySlingSettingsService(instance3), config);
 
-        assertTrue(registry1.registerAnnouncement(ann1)!=-1);
-        assertTrue(registry2.registerAnnouncement(ann2)!=-1);
-        assertTrue(registry3.registerAnnouncement(ann3)!=-1);
+        assertNotEquals(registry1.registerAnnouncement(ann1), -1);
+        assertNotEquals(registry2.registerAnnouncement(ann2), -1);
+        assertNotEquals(registry3.registerAnnouncement(ann3), -1);
         
         assertTrue(registry1.hasActiveAnnouncement(cluster1.getInstances().get(1).getSlingId()));
         assertTrue(registry2.hasActiveAnnouncement(cluster2.getInstances().get(2).getSlingId()));
