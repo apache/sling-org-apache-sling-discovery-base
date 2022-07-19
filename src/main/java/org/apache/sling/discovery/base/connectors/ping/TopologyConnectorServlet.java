@@ -213,9 +213,10 @@ public class TopologyConnectorServlet extends HttpServlet {
 
         String topologyAnnouncementJSON = requestValidator.decodeMessage(request);
 
-        // javasecurity:S5145: Replace pattern-breaking characters
-        logger.debug("doPost: incoming topology announcement is: " + topologyAnnouncementJSON.replaceAll("[\n\r\t]", "_"));
-
+        if (logger.isDebugEnabled()) {
+            // javasecurity:S5145: Replace pattern-breaking characters
+            logger.debug("doPost: incoming topology announcement is: " + topologyAnnouncementJSON.replaceAll("[\n\r\t]", "_"));
+        }
         final Announcement incomingTopologyAnnouncement;
         try {
             incomingTopologyAnnouncement = Announcement.fromJSON(topologyAnnouncementJSON);
@@ -289,7 +290,9 @@ public class TopologyConnectorServlet extends HttpServlet {
             }
             if (backoffInterval > 0) {
                 replyAnnouncement.setBackoffInterval(backoffInterval);
-                logger.debug("doPost: backoffInterval for client set to " + replyAnnouncement.getBackoffInterval());
+                if (logger.isDebugEnabled()) {
+                    logger.debug("doPost: backoffInterval for client set to " + replyAnnouncement.getBackoffInterval());
+                }
             }
             final String p = requestValidator.encodeMessage(replyAnnouncement.asJSON());
             requestValidator.trustMessage(response, request, p);
