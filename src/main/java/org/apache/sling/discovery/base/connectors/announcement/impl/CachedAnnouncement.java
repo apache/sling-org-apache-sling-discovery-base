@@ -16,9 +16,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.sling.discovery.base.connectors.announcement;
+package org.apache.sling.discovery.base.connectors.announcement.impl;
 
 import org.apache.sling.discovery.base.connectors.BaseConfig;
+import org.apache.sling.discovery.base.connectors.announcement.Announcement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,7 +44,7 @@ public class CachedAnnouncement {
 
     private final BaseConfig config;
     
-    public CachedAnnouncement(final Announcement announcement, final BaseConfig config) {
+    CachedAnnouncement(final Announcement announcement, final BaseConfig config) {
         this.announcement = announcement;
         this.config = config;
     }
@@ -94,7 +95,7 @@ public class CachedAnnouncement {
      * @return the new resulting backoff interval -
      * or 0 if no backoff is applicable yet.
      */
-    public final long registerPing(Announcement incomingAnnouncement, BaseConfig config) {
+    final long registerPing(Announcement incomingAnnouncement, BaseConfig config) {
         lastPing = System.currentTimeMillis();
         announcement.registerPing(incomingAnnouncement);
         if (incomingAnnouncement.isInherited()) {

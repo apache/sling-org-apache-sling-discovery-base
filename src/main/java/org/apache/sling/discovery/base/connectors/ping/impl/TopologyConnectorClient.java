@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.sling.discovery.base.connectors.ping;
+package org.apache.sling.discovery.base.connectors.ping.impl;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -53,6 +53,8 @@ import org.apache.sling.discovery.base.connectors.BaseConfig;
 import org.apache.sling.discovery.base.connectors.announcement.Announcement;
 import org.apache.sling.discovery.base.connectors.announcement.AnnouncementFilter;
 import org.apache.sling.discovery.base.connectors.announcement.AnnouncementRegistry;
+import org.apache.sling.discovery.base.connectors.ping.TopologyConnectorClientInformation;
+import org.apache.sling.discovery.base.connectors.ping.TopologyRequestValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -112,7 +114,7 @@ public class TopologyConnectorClient implements
     /** SLING-3382: unix-time at which point the backoff-period ends and pings can be sent again **/
     private long backoffPeriodEnd = -1;
     
-    public TopologyConnectorClient(final ClusterViewService clusterViewService,
+    TopologyConnectorClient(final ClusterViewService clusterViewService,
                                    final AnnouncementRegistry announcementRegistry, final BaseConfig config,
                                    final URL connectorUrl, final String serverInfo) {
         if (clusterViewService == null) {
@@ -139,7 +141,7 @@ public class TopologyConnectorClient implements
     }
 
     /** ping the server and pass the announcements between the two **/
-    public void ping(final boolean force) {
+    void ping(final boolean force) {
     	if (autoStopped) {
     		// then we suppress any further pings!
     		logger.debug("ping: autoStopped=true, hence suppressing any further pings.");

@@ -39,7 +39,6 @@ import org.apache.sling.discovery.base.connectors.BaseConfig;
 import org.apache.sling.discovery.base.connectors.announcement.Announcement;
 import org.apache.sling.discovery.base.connectors.announcement.AnnouncementFilter;
 import org.apache.sling.discovery.base.connectors.announcement.AnnouncementRegistry;
-import org.apache.sling.discovery.base.connectors.announcement.CachedAnnouncement;
 import org.apache.sling.discovery.commons.providers.util.ResourceHelper;
 import org.apache.sling.settings.SlingSettingsService;
 import org.osgi.service.component.annotations.Activate;

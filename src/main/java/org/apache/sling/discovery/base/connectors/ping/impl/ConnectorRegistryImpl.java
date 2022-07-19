@@ -32,7 +32,6 @@ import org.apache.sling.discovery.base.commons.ClusterViewService;
 import org.apache.sling.discovery.base.connectors.BaseConfig;
 import org.apache.sling.discovery.base.connectors.announcement.AnnouncementRegistry;
 import org.apache.sling.discovery.base.connectors.ping.ConnectorRegistry;
-import org.apache.sling.discovery.base.connectors.ping.TopologyConnectorClient;
 import org.apache.sling.discovery.base.connectors.ping.TopologyConnectorClientInformation;
 import org.osgi.framework.BundleContext;
 import org.osgi.service.component.annotations.Activate;

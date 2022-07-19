@@ -22,6 +22,7 @@ import java.util.Collection;
 
 import org.apache.sling.discovery.ClusterView;
 import org.apache.sling.discovery.InstanceDescription;
+import org.apache.sling.discovery.base.connectors.announcement.impl.CachedAnnouncement;
 
 /**
  * The announcement registry keeps track of all the announcement that this
