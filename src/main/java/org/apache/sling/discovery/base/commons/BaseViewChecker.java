@@ -25,8 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import org.apache.felix.scr.annotations.Activate;
-import org.apache.felix.scr.annotations.Deactivate;
 import org.apache.sling.api.resource.ResourceResolverFactory;
 import org.apache.sling.commons.scheduler.Scheduler;
 import org.apache.sling.discovery.base.connectors.BaseConfig;
@@ -36,6 +34,12 @@ import org.apache.sling.settings.SlingSettingsService;
 import org.osgi.framework.Constants;
 import org.osgi.framework.ServiceReference;
 import org.osgi.service.component.ComponentContext;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
+import org.osgi.service.component.annotations.ReferencePolicy;
+import org.osgi.service.http.HttpService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -84,7 +88,7 @@ public abstract class BaseViewChecker implements ViewChecker, Runnable {
     private boolean forcePing;
 
     /** SLING-4765 : store endpoints to /clusterInstances for more verbose duplicate slingId/ghost detection **/
-    protected final Map<Long, String[]> endpoints = new HashMap<Long, String[]>();
+    protected final Map<Long, String[]> endpoints = new HashMap<>();
 
     protected PeriodicBackgroundJob periodicPingJob;
 
@@ -227,6 +231,10 @@ public abstract class BaseViewChecker implements ViewChecker, Runnable {
     /**
      * Bind a http service
      */
+    @Reference(service = HttpService.class,
+            cardinality = ReferenceCardinality.MULTIPLE,
+            policy = ReferencePolicy.DYNAMIC,
+            bind = "bindHttpService", unbind = "unbindHttpService")
     protected void bindHttpService(final ServiceReference reference) {
         String[] endpointUrls = toStringArray(reference.getProperty(REG_PROPERTY_ENDPOINTS));
         if ( endpointUrls == null ) {
@@ -245,6 +253,7 @@ public abstract class BaseViewChecker implements ViewChecker, Runnable {
     protected void unbindHttpService(final ServiceReference reference) {
         synchronized ( lock ) {
             if ( this.endpoints.remove(reference.getProperty(Constants.SERVICE_ID)) != null ) {
+                // do nothing
             }
         }
     }
@@ -265,7 +274,7 @@ public abstract class BaseViewChecker implements ViewChecker, Runnable {
         } else if (propValue.getClass().isArray()) {
             // other array
             Object[] valueArray = (Object[]) propValue;
-            List<String> values = new ArrayList<String>(valueArray.length);
+            List<String> values = new ArrayList<>(valueArray.length);
             for (Object value : valueArray) {
                 if (value != null) {
                     values.add(value.toString());
@@ -276,7 +285,7 @@ public abstract class BaseViewChecker implements ViewChecker, Runnable {
         } else if (propValue instanceof Collection<?>) {
             // collection
             Collection<?> valueCollection = (Collection<?>) propValue;
-            List<String> valueList = new ArrayList<String>(valueCollection.size());
+            List<String> valueList = new ArrayList<>(valueCollection.size());
             for (Object value : valueCollection) {
                 if (value != null) {
                     valueList.add(value.toString());

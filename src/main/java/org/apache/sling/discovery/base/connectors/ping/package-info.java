@@ -23,8 +23,7 @@
  *
  * @version 1.0.0
  */
-@Version("1.0.0")
+@Version("1.0.1")
 package org.apache.sling.discovery.base.connectors.ping;
 
-import aQute.bnd.annotation.Version;
-
+import org.osgi.annotation.versioning.Version;
