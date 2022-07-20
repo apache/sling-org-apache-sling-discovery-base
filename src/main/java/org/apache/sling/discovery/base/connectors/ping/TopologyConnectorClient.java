@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.sling.discovery.base.connectors.ping.impl;
+package org.apache.sling.discovery.base.connectors.ping;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -53,8 +53,6 @@ import org.apache.sling.discovery.base.connectors.BaseConfig;
 import org.apache.sling.discovery.base.connectors.announcement.Announcement;
 import org.apache.sling.discovery.base.connectors.announcement.AnnouncementFilter;
 import org.apache.sling.discovery.base.connectors.announcement.AnnouncementRegistry;
-import org.apache.sling.discovery.base.connectors.ping.TopologyConnectorClientInformation;
-import org.apache.sling.discovery.base.connectors.ping.TopologyRequestValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -41,8 +41,6 @@
     </scm>
 
     <properties>
-        <!-- SLING-11355: delete after release has been created -->
-        <bnd.baseline.diffpackages>!*.announcement.*, !*.ping.*, *</bnd.baseline.diffpackages>
         <jackrabbit.version>2.14.3</jackrabbit.version>
         <!-- by default Slow tests are excluded - use -PincludeSlowTests to include them -->
         <sling.excluded.surefire.groups>org.apache.sling.commons.testing.junit.categories.Slow</sling.excluded.surefire.groups>
