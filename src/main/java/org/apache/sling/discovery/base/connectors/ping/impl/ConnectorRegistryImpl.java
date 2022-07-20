@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.sling.discovery.base.connectors.ping;
+package org.apache.sling.discovery.base.connectors.ping.impl;
 
 import java.net.InetAddress;
 import java.net.URL;
@@ -28,15 +28,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.apache.felix.scr.annotations.Activate;
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Deactivate;
-import org.apache.felix.scr.annotations.Reference;
-import org.apache.felix.scr.annotations.Service;
 import org.apache.sling.discovery.base.commons.ClusterViewService;
 import org.apache.sling.discovery.base.connectors.BaseConfig;
 import org.apache.sling.discovery.base.connectors.announcement.AnnouncementRegistry;
-import org.osgi.service.component.ComponentContext;
+import org.apache.sling.discovery.base.connectors.ping.ConnectorRegistry;
+import org.apache.sling.discovery.base.connectors.ping.TopologyConnectorClientInformation;
+import org.osgi.framework.BundleContext;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Reference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,14 +46,13 @@ import org.slf4j.LoggerFactory;
  * keeps a list of outgoing connectors and is capable of
  * pinging them.
  */
-@Component
-@Service(value = ConnectorRegistry.class)
+@Component(service= ConnectorRegistry.class)
 public class ConnectorRegistryImpl implements ConnectorRegistry {
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     /** A map of id-> topology connector clients currently registered/activate **/
-    private final Map<String, TopologyConnectorClient> outgoingClientsMap = new HashMap<String, TopologyConnectorClient>();
+    private final Map<String, TopologyConnectorClient> outgoingClientsMap = new HashMap<>();
 
     @Reference
     private AnnouncementRegistry announcementRegistry;
@@ -74,8 +74,8 @@ public class ConnectorRegistryImpl implements ConnectorRegistry {
     }
     
     @Activate
-    protected void activate(final ComponentContext cc) {
-        port = cc.getBundleContext().getProperty("org.osgi.service.http.port");
+    protected void activate(BundleContext context) {
+        port = context.getProperty("org.osgi.service.http.port");
     }
     
     @Deactivate
@@ -102,7 +102,7 @@ public class ConnectorRegistryImpl implements ConnectorRegistry {
                 Entry<String, TopologyConnectorClient> entry = it.next();
                 if (entry.getValue().getConnectorUrl().toExternalForm().equals(connectorUrl.toExternalForm())) {
                     it.remove();
-                    logger.info("registerOutgoingConnection: re-registering connector: "+connectorUrl);
+                    logger.info("registerOutgoingConnection: re-registering connector: {}", connectorUrl);
                 }
             }
             String serverInfo;
@@ -122,7 +122,7 @@ public class ConnectorRegistryImpl implements ConnectorRegistry {
     }
 
     public Collection<TopologyConnectorClientInformation> listOutgoingConnectors() {
-        final List<TopologyConnectorClientInformation> result = new ArrayList<TopologyConnectorClientInformation>();
+        final List<TopologyConnectorClientInformation> result = new ArrayList<>();
         synchronized (outgoingClientsMap) {
             result.addAll(outgoingClientsMap.values());
         }
@@ -145,7 +145,7 @@ public class ConnectorRegistryImpl implements ConnectorRegistry {
     public void pingOutgoingConnectors(boolean force) {
         List<TopologyConnectorClient> outgoingTemplatesClone;
         synchronized (outgoingClientsMap) {
-            outgoingTemplatesClone = new ArrayList<TopologyConnectorClient>(
+            outgoingTemplatesClone = new ArrayList<>(
                     outgoingClientsMap.values());
         }
         for (Iterator<TopologyConnectorClient> it = outgoingTemplatesClone

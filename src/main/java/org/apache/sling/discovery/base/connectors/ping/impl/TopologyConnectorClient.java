@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.sling.discovery.base.connectors.ping;
+package org.apache.sling.discovery.base.connectors.ping.impl;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -53,6 +53,8 @@ import org.apache.sling.discovery.base.connectors.BaseConfig;
 import org.apache.sling.discovery.base.connectors.announcement.Announcement;
 import org.apache.sling.discovery.base.connectors.announcement.AnnouncementFilter;
 import org.apache.sling.discovery.base.connectors.announcement.AnnouncementRegistry;
+import org.apache.sling.discovery.base.connectors.ping.TopologyConnectorClientInformation;
+import org.apache.sling.discovery.base.connectors.ping.TopologyRequestValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -113,8 +115,8 @@ public class TopologyConnectorClient implements
     private long backoffPeriodEnd = -1;
     
     TopologyConnectorClient(final ClusterViewService clusterViewService,
-            final AnnouncementRegistry announcementRegistry, final BaseConfig config,
-            final URL connectorUrl, final String serverInfo) {
+                                   final AnnouncementRegistry announcementRegistry, final BaseConfig config,
+                                   final URL connectorUrl, final String serverInfo) {
         if (clusterViewService == null) {
             throw new IllegalArgumentException(
                     "clusterViewService must not be null");

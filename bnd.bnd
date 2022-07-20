@@ -1,0 +1,7 @@
+-includeresource:\
+    @commons-net-*.jar!/org/apache/commons/net/util/SubnetUtils*
+
+# whitelist the private reference usage
+-fixupmessages:"Export org.apache.sling.discovery.base.connectors.announcement,  has 1,  private references [org.apache.sling.discovery.base.connectors.announcement.impl]"; \
+    restrict:=warning; \
+    is:=warn

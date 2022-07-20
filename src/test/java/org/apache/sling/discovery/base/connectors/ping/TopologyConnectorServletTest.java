@@ -25,16 +25,24 @@ import static org.mockito.Mockito.when;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.apache.sling.discovery.base.commons.ClusterViewService;
 import org.apache.sling.discovery.base.connectors.BaseConfig;
+import org.apache.sling.discovery.base.connectors.announcement.AnnouncementRegistry;
+import org.apache.sling.testing.mock.osgi.junit.OsgiContext;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.osgi.service.http.HttpService;
 
-import junitx.util.PrivateAccessor;
+import java.util.Hashtable;
 
 public class TopologyConnectorServletTest {
 
     private TopologyConnectorServlet servlet;
-    
+
+    @Rule
+    public final OsgiContext context = new OsgiContext();
+
     private HttpServletRequest getRequest(String host, String addr) {
         HttpServletRequest result = mock(HttpServletRequest.class);
         when(result.getRemoteAddr()).thenReturn(addr);
@@ -44,9 +52,23 @@ public class TopologyConnectorServletTest {
     
     @Before
     public void setUp() throws Exception {
-        servlet = new TopologyConnectorServlet();
-        BaseConfig config = mock(BaseConfig.class);
-        PrivateAccessor.setField(servlet, "config", config);
+        //Mock BaseConfig
+        BaseConfig baseConfig = mock(BaseConfig.class);
+        context.registerService(BaseConfig.class, baseConfig);
+
+        //Mock AnnouncementRegistry
+        AnnouncementRegistry announcementRegistry = mock(AnnouncementRegistry.class);
+        context.registerService(AnnouncementRegistry.class, announcementRegistry);
+
+        //Mock ClusterViewService
+        ClusterViewService clusterViewService = mock(ClusterViewService.class);
+        context.registerService(ClusterViewService.class, clusterViewService);
+
+        //Mock HttpService
+        HttpService httpService = mock(HttpService.class);
+        context.registerService(HttpService.class, httpService);
+
+        servlet = context.registerInjectActivateService(TopologyConnectorServlet.class, new TopologyConnectorServlet(), new Hashtable<>());
     }
     
     @Test

@@ -34,23 +34,21 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.felix.scr.annotations.Activate;
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Deactivate;
-import org.apache.felix.scr.annotations.Reference;
-import org.apache.felix.scr.annotations.Service;
 import org.apache.sling.discovery.ClusterView;
 import org.apache.sling.discovery.base.commons.ClusterViewHelper;
 import org.apache.sling.discovery.base.commons.ClusterViewService;
 import org.apache.sling.discovery.base.commons.UndefinedClusterViewException;
 import org.apache.sling.discovery.base.connectors.BaseConfig;
 import org.apache.sling.discovery.base.connectors.announcement.Announcement;
-import org.apache.sling.discovery.base.connectors.announcement.AnnouncementFilter;
 import org.apache.sling.discovery.base.connectors.announcement.AnnouncementRegistry;
 import org.apache.sling.discovery.base.connectors.ping.wl.SubnetWhitelistEntry;
 import org.apache.sling.discovery.base.connectors.ping.wl.WhitelistEntry;
 import org.apache.sling.discovery.base.connectors.ping.wl.WildcardWhitelistEntry;
 import org.osgi.service.component.ComponentContext;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.http.HttpService;
 import org.osgi.service.http.NamespaceException;
 import org.slf4j.Logger;
@@ -63,13 +61,12 @@ import org.slf4j.LoggerFactory;
  * hmac-signature with a shared key or via a flexible whitelist)
  */
 @SuppressWarnings("serial")
-@Component(immediate = true)
-@Service(value=TopologyConnectorServlet.class)
+@Component(immediate = true, service = TopologyConnectorServlet.class)
 public class TopologyConnectorServlet extends HttpServlet {
 
-    /** 
+    /**
      * prefix under which the topology connector servlet is registered -
-     * the URL will consist of this prefix + "connector.slingId.json" 
+     * the URL will consist of this prefix + "connector.slingId.json"
      */
     private static final String TOPOLOGY_CONNECTOR_PREFIX = "/libs/sling/topology";
 
@@ -83,18 +80,20 @@ public class TopologyConnectorServlet extends HttpServlet {
 
     @Reference
     private HttpService httpService;
-    
+
     @Reference
     private BaseConfig config;
 
-    /** 
+    /**
      * This list contains WhitelistEntry (ips/hostnames, cidr, wildcards),
      * each filtering some hostname/addresses that are allowed to connect to this servlet.
      **/
-    private final List<WhitelistEntry> whitelist = new ArrayList<WhitelistEntry>();
-    
-    /** Set of plaintext whitelist entries - for faster lookups **/
-    private final Set<String> plaintextWhitelist = new HashSet<String>();
+    private final List<WhitelistEntry> whitelist = new ArrayList<>();
+
+    /**
+     * Set of plaintext whitelist entries - for faster lookups
+     **/
+    private final Set<String> plaintextWhitelist = new HashSet<>();
 
     private TopologyRequestValidator requestValidator;
 
@@ -106,59 +105,57 @@ public class TopologyConnectorServlet extends HttpServlet {
             initWhitelist(whitelistConfig);
         }
         requestValidator = new TopologyRequestValidator(config);
-        
+
         try {
-            httpService.registerServlet(TopologyConnectorServlet.TOPOLOGY_CONNECTOR_PREFIX, 
-                    this, null, null);
-            logger.info("activate: connector servlet registered at "+
-                    TopologyConnectorServlet.TOPOLOGY_CONNECTOR_PREFIX);
+            httpService.registerServlet(TopologyConnectorServlet.TOPOLOGY_CONNECTOR_PREFIX, this, null, null);
+            logger.info("activate: connector servlet registered at " + TopologyConnectorServlet.TOPOLOGY_CONNECTOR_PREFIX);
         } catch (ServletException e) {
-            logger.error("activate: ServletException while registering topology connector servlet: "+e, e);
+            logger.error("activate: ServletException while registering topology connector servlet: " + e, e);
         } catch (NamespaceException e) {
-            logger.error("activate: NamespaceException while registering topology connector servlet: "+e, e);
+            logger.error("activate: NamespaceException while registering topology connector servlet: " + e, e);
         }
     }
-    
+
     @Deactivate
     protected void deactivate() {
         httpService.unregister(TOPOLOGY_CONNECTOR_PREFIX);
     }
 
     void initWhitelist(String[] whitelistConfig) {
-        if (whitelistConfig==null) {
+        if (whitelistConfig == null) {
             return;
         }
         for (int i = 0; i < whitelistConfig.length; i++) {
             String aWhitelistEntry = whitelistConfig[i];
-            
+
             WhitelistEntry whitelistEntry = null;
             if (aWhitelistEntry.contains(".") && aWhitelistEntry.contains("/")) {
                 // then this is a CIDR notation
-                try{
+                try {
                     whitelistEntry = new SubnetWhitelistEntry(aWhitelistEntry);
-                } catch(Exception e) {
-                    logger.error("activate: wrongly formatted CIDR subnet definition. Expected eg '1.2.3.4/24'. ignoring: "+aWhitelistEntry);
+                } catch (Exception e) {
+                    logger.error("activate: wrongly formatted CIDR subnet definition. Expected eg '1.2.3.4/24'. ignoring: " + aWhitelistEntry);
                     continue;
                 }
             } else if (aWhitelistEntry.contains(".") && aWhitelistEntry.contains(" ")) {
                 // then this is a IP/subnet-mask notation
-                try{
+                try {
                     final StringTokenizer st = new StringTokenizer(aWhitelistEntry, " ");
                     final String ip = st.nextToken();
                     if (st.hasMoreTokens()) {
                         final String mask = st.nextToken();
                         if (st.hasMoreTokens()) {
-                            logger.error("activate: wrongly formatted ip subnet definition. Expected '10.1.2.3 255.0.0.0'. Ignoring: "+aWhitelistEntry);
+                            logger.error("activate: wrongly formatted ip subnet definition. Expected '10.1.2.3 255.0.0.0'. Ignoring: " + aWhitelistEntry);
                             continue;
                         }
                         whitelistEntry = new SubnetWhitelistEntry(ip, mask);
                     }
-                } catch(Exception e) {
-                    logger.error("activate: wrongly formatted ip subnet definition. Expected '10.1.2.3 255.0.0.0'. Ignoring: "+aWhitelistEntry);
+                } catch (Exception e) {
+                    logger.error("activate: wrongly formatted ip subnet definition. Expected '10.1.2.3 255.0.0.0'. Ignoring: " + aWhitelistEntry);
                     continue;
                 }
             }
-            if (whitelistEntry==null) {
+            if (whitelistEntry == null) {
                 if (aWhitelistEntry.contains("*") || aWhitelistEntry.contains("?")) {
                     whitelistEntry = new WildcardWhitelistEntry(aWhitelistEntry);
                 } else {
@@ -166,7 +163,7 @@ public class TopologyConnectorServlet extends HttpServlet {
                 }
             }
             logger.info("activate: adding whitelist entry: " + aWhitelistEntry);
-            if (whitelistEntry!=null) {
+            if (whitelistEntry != null) {
                 whitelist.add(whitelistEntry);
             }
         }
@@ -184,16 +181,16 @@ public class TopologyConnectorServlet extends HttpServlet {
         }
 
         final String[] pathInfo = request.getPathInfo().split("\\.");
-        final String extension = pathInfo.length==3 ? pathInfo[2] : "";
+        final String extension = pathInfo.length == 3 ? pathInfo[2] : "";
         if (!"json".equals(extension)) {
             response.sendError(HttpServletResponse.SC_NOT_FOUND);
             return;
         }
-        final String selector = pathInfo.length==3 ? pathInfo[1] : "";
+        final String selector = pathInfo.length == 3 ? pathInfo[1] : "";
 
         announcementRegistry.unregisterAnnouncement(selector);
     }
-    
+
     @Override
     protected void doPut(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -206,23 +203,23 @@ public class TopologyConnectorServlet extends HttpServlet {
         }
 
         final String[] pathInfo = request.getPathInfo().split("\\.");
-        final String extension = pathInfo.length==3 ? pathInfo[2] : "";
+        final String extension = pathInfo.length == 3 ? pathInfo[2] : "";
         if (!"json".equals(extension)) {
             response.sendError(HttpServletResponse.SC_NOT_FOUND);
             return;
         }
-        
-        final String selector = pathInfo.length==3 ? pathInfo[1] : "";
+
+        final String selector = pathInfo.length == 3 ? pathInfo[1] : "";
 
         String topologyAnnouncementJSON = requestValidator.decodeMessage(request);
-    	if (logger.isDebugEnabled()) {
-	        logger.debug("doPost: incoming topology announcement is: "
-	                + topologyAnnouncementJSON);
-    	}
+
+        if (logger.isDebugEnabled()) {
+            // javasecurity:S5145: Replace pattern-breaking characters
+            logger.debug("doPost: incoming topology announcement is: " + topologyAnnouncementJSON.replaceAll("[\n\r\t]", "_"));
+        }
         final Announcement incomingTopologyAnnouncement;
         try {
-            incomingTopologyAnnouncement = Announcement
-                    .fromJSON(topologyAnnouncementJSON);
+            incomingTopologyAnnouncement = Announcement.fromJSON(topologyAnnouncementJSON);
 
             if (!incomingTopologyAnnouncement.getOwnerId().equals(selector)) {
                 response.sendError(HttpServletResponse.SC_BAD_REQUEST);
@@ -230,15 +227,14 @@ public class TopologyConnectorServlet extends HttpServlet {
             }
 
             String slingId = clusterViewService.getSlingId();
-            if (slingId==null) {
-            	response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            	logger.info("doPut: no slingId available. Service not ready as expected at the moment.");
-            	return;
+            if (slingId == null) {
+                response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                logger.info("doPut: no slingId available. Service not ready as expected at the moment.");
+                return;
             }
-			incomingTopologyAnnouncement.removeInherited(slingId);
+            incomingTopologyAnnouncement.removeInherited(slingId);
 
-            final Announcement replyAnnouncement = new Announcement(
-                    slingId);
+            final Announcement replyAnnouncement = new Announcement(slingId);
 
             long backoffInterval = -1;
             ClusterView clusterView = clusterViewService.getLocalClusterView();
@@ -249,19 +245,19 @@ public class TopologyConnectorServlet extends HttpServlet {
                 return;
             } else if (ClusterViewHelper.contains(clusterView, incomingTopologyAnnouncement
                     .getOwnerId())) {
-            	if (logger.isDebugEnabled()) {
-	                logger.debug("doPost: rejecting an announcement from an instance that is part of my cluster: "
-	                        + incomingTopologyAnnouncement);
-            	}
+                if (logger.isDebugEnabled()) {
+                    logger.debug("doPost: rejecting an announcement from an instance that is part of my cluster: "
+                            + incomingTopologyAnnouncement);
+                }
                 // marking as 'loop'
                 replyAnnouncement.setLoop(true);
                 backoffInterval = config.getBackoffStandbyInterval();
             } else if (ClusterViewHelper.containsAny(clusterView, incomingTopologyAnnouncement
                     .listInstances())) {
-            	if (logger.isDebugEnabled()) {
-	                logger.debug("doPost: rejecting an announcement as it contains instance(s) that is/are part of my cluster: "
-	                        + incomingTopologyAnnouncement);
-            	}
+                if (logger.isDebugEnabled()) {
+                    logger.debug("doPost: rejecting an announcement as it contains instance(s) that is/are part of my cluster: "
+                            + incomingTopologyAnnouncement);
+                }
                 // marking as 'loop'
                 replyAnnouncement.setLoop(true);
                 backoffInterval = config.getBackoffStandbyInterval();
@@ -269,13 +265,13 @@ public class TopologyConnectorServlet extends HttpServlet {
                 backoffInterval = announcementRegistry
                         .registerAnnouncement(incomingTopologyAnnouncement);
                 if (logger.isDebugEnabled()) {
-                    logger.debug("doPost: backoffInterval after registration: "+backoffInterval);
+                    logger.debug("doPost: backoffInterval after registration: " + backoffInterval);
                 }
-                if (backoffInterval==-1) {
-                	if (logger.isDebugEnabled()) {
-    	                logger.debug("doPost: rejecting an announcement from an instance that I already see in my topology: "
-    	                        + incomingTopologyAnnouncement);
-                	}
+                if (backoffInterval == -1) {
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("doPost: rejecting an announcement from an instance that I already see in my topology: "
+                                + incomingTopologyAnnouncement);
+                    }
                     // marking as 'loop'
                     replyAnnouncement.setLoop(true);
                     backoffInterval = config.getBackoffStandbyInterval();
@@ -283,33 +279,29 @@ public class TopologyConnectorServlet extends HttpServlet {
                     // normal, successful case: replying with the part of the topology which this instance sees
                     replyAnnouncement.setLocalCluster(clusterView);
                     announcementRegistry.addAllExcept(replyAnnouncement, clusterView,
-                            new AnnouncementFilter() {
-    
-                                public boolean accept(final String receivingSlingId, Announcement announcement) {
-                                    if (announcement.getPrimaryKey().equals(
-                                            incomingTopologyAnnouncement
-                                                    .getPrimaryKey())) {
-                                        return false;
-                                    }
-                                    return true;
+                            (receivingSlingId, announcement) -> {
+                                if (announcement.getPrimaryKey().equals(
+                                        incomingTopologyAnnouncement.getPrimaryKey())) {
+                                    return false;
                                 }
+                                return true;
                             });
                 }
             }
-            if (backoffInterval>0) {
+            if (backoffInterval > 0) {
                 replyAnnouncement.setBackoffInterval(backoffInterval);
                 if (logger.isDebugEnabled()) {
-                    logger.debug("doPost: backoffInterval for client set to "+replyAnnouncement.getBackoffInterval());
+                    logger.debug("doPost: backoffInterval for client set to " + replyAnnouncement.getBackoffInterval());
                 }
             }
             final String p = requestValidator.encodeMessage(replyAnnouncement.asJSON());
             requestValidator.trustMessage(response, request, p);
             // gzip the response if the client accepts this
             final String acceptEncodingHeader = request.getHeader("Accept-Encoding");
-            if (acceptEncodingHeader!=null && acceptEncodingHeader.contains("gzip")) {
+            if (acceptEncodingHeader != null && acceptEncodingHeader.contains("gzip")) {
                 // tell the client that the content is gzipped:
                 response.setHeader("Content-Encoding", "gzip");
-                
+
                 // then gzip the body
                 final GZIPOutputStream gzipOut = new GZIPOutputStream(response.getOutputStream());
                 gzipOut.write(p.getBytes("UTF-8"));
@@ -324,13 +316,15 @@ public class TopologyConnectorServlet extends HttpServlet {
             logger.error("doPost: Got a JSONException: " + e, e);
             response.sendError(500);
         } catch (UndefinedClusterViewException e) {
-            logger.warn("doPost: no clusterView available at the moment - cannot handle connectors now: "+e);
+            logger.warn("doPost: no clusterView available at the moment - cannot handle connectors now: " + e);
             response.sendError(503); // "please retry, but atm I can't help since I'm isolated"
         }
 
     }
-    
-    /** Checks if the provided request's remote server is whitelisted **/
+
+    /**
+     * Checks if the provided request's remote server is whitelisted
+     **/
     boolean isWhitelisted(final HttpServletRequest request) {
         if (config.isHmacEnabled()) {
             final boolean isTrusted = requestValidator.isTrusted(request);
@@ -340,20 +334,19 @@ public class TopologyConnectorServlet extends HttpServlet {
             }
             return isTrusted;
         }
-        
+
         if (plaintextWhitelist.contains(request.getRemoteHost()) ||
                 plaintextWhitelist.contains(request.getRemoteAddr())) {
             return true;
         }
 
-        for (Iterator<WhitelistEntry> it = whitelist.iterator(); it.hasNext();) {
+        for (Iterator<WhitelistEntry> it = whitelist.iterator(); it.hasNext(); ) {
             WhitelistEntry whitelistEntry = it.next();
             if (whitelistEntry.accepts(request)) {
                 return true;
             }
         }
-        logger.info("isWhitelisted: rejecting " + request.getRemoteAddr()
-                + ", " + request.getRemoteHost());
+        logger.info("isWhitelisted: rejecting " + request.getRemoteAddr() + ", " + request.getRemoteHost());
         return false;
     }
 

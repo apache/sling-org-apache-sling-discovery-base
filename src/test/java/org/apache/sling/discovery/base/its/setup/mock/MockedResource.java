@@ -39,6 +39,7 @@ import org.apache.sling.api.resource.ModifiableValueMap;
 import org.apache.sling.api.resource.SyntheticResource;
 import org.apache.sling.api.resource.ValueMap;
 import org.apache.sling.api.wrappers.ValueMapDecorator;
+import org.apache.sling.jcr.resource.JcrResourceUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -231,7 +232,7 @@ public class MockedResource extends SyntheticResource {
                         final Node node = session.getNode(getPath());
                         final String key = String.valueOf(arg0);
                         if (node.hasProperty(key)) {
-                            return node.getProperty(key);
+                            return JcrResourceUtil.toJavaObject(node.getProperty(key));
                         } else {
                             return null;
                         }
