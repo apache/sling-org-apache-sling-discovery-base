@@ -23,7 +23,7 @@
  *
  * @version 1.0.0
  */
-@Version("1.0.1")
+@Version("2.0.0")
 package org.apache.sling.discovery.base.connectors.ping;
 
 import org.osgi.annotation.versioning.Version;
