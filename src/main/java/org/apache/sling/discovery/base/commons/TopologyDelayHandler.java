@@ -30,7 +30,6 @@ import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.osgi.framework.ServiceReference;
 import org.osgi.service.component.ComponentContext;
 
 /**
