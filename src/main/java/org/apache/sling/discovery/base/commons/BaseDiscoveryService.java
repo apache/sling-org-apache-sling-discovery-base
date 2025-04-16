@@ -19,6 +19,7 @@
 package org.apache.sling.discovery.base.commons;
 
 import java.util.Collection;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.apache.sling.discovery.DiscoveryService;
 import org.apache.sling.discovery.InstanceDescription;
@@ -28,6 +29,11 @@ import org.apache.sling.discovery.base.connectors.announcement.AnnouncementRegis
 import org.apache.sling.discovery.commons.providers.spi.LocalClusterView;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.osgi.service.component.annotations.Reference;
+import org.apache.sling.discovery.base.commons.TopologyDelayHandler;
+import org.apache.sling.discovery.TopologyEvent;
+import org.apache.sling.discovery.TopologyEvent.Type;
+import org.apache.sling.discovery.TopologyEventListener;
 
 /**
  * Abstract base class for DiscoveryService implementations which uses the 
@@ -40,6 +46,12 @@ public abstract class BaseDiscoveryService implements DiscoveryService {
 
     /** the old view previously valid and sent to the TopologyEventListeners **/
     private DefaultTopologyView oldView;
+
+    @Reference
+    private TopologyDelayHandler topologyDelayHandler;
+
+    /** The topology event listeners */
+    private final Collection<TopologyEventListener> topologyEventListeners = new CopyOnWriteArrayList<>();
 
     protected abstract ClusterViewService getClusterViewService();
     
@@ -93,7 +105,53 @@ public abstract class BaseDiscoveryService implements DiscoveryService {
                 .listInstances(localClusterView);
         topology.addInstances(attachedInstances);
 
+        // Check if topology changes should be delayed
+        if (topologyDelayHandler != null && topologyDelayHandler.shouldDelayTopologyChange(null)) {
+            logger.debug("getTopology: topology changes are delayed, returning old view");
+            return oldView;
+        }
+
         return topology;
+    }
+
+    protected void handleTopologyEvent(TopologyEvent event) {
+        if (event == null) {
+            return;
+        }
+
+        if (topologyDelayHandler != null) {
+            if (topologyDelayHandler.shouldDelayTopologyChange(event)) {
+                logger.debug("handleTopologyEvent: delaying topology event: {}", event);
+                return;
+            }
+
+            if (event.getType() == Type.TOPOLOGY_CHANGING) {
+                topologyDelayHandler.startTopologyChange();
+            } else if (event.getType() == Type.TOPOLOGY_CHANGED) {
+                topologyDelayHandler.endTopologyChange();
+            }
+        }
+
+        // Update old view when topology changes
+        if (event.getType() == Type.TOPOLOGY_CHANGED && event.getNewView() != null) {
+            setOldView((DefaultTopologyView) event.getNewView());
+        }
+
+        // Notify topology event listeners
+        Collection<TopologyEventListener> listeners = getTopologyEventListeners();
+        if (listeners != null) {
+            for (TopologyEventListener listener : listeners) {
+                try {
+                    listener.handleTopologyEvent(event);
+                } catch (Exception e) {
+                    logger.error("Error notifying topology event listener", e);
+                }
+            }
+        }
+    }
+
+    protected Collection<TopologyEventListener> getTopologyEventListeners() {
+        return topologyEventListeners;
     }
 
 }
