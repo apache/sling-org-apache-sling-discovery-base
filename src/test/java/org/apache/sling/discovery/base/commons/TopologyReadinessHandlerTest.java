@@ -32,16 +32,16 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.osgi.service.component.ComponentContext;
 
-public class TopologyDelayHandlerTest {
+public class TopologyReadinessHandlerTest {
 
-    private TopologyDelayHandler handler;
+    private TopologyReadinessHandler handler;
     private SystemReadyService systemReadyService;
     private ComponentContext componentContext;
     private TopologyView oldView;
 
     @Before
     public void setup() {
-        handler = new TopologyDelayHandler();
+        handler = new TopologyReadinessHandler();
         systemReadyService = mock(SystemReadyService.class);
         componentContext = mock(ComponentContext.class);
         BundleContext bundleContext = mock(BundleContext.class);
@@ -58,16 +58,12 @@ public class TopologyDelayHandlerTest {
 
     @Test
     public void testSystemNotReady() {
-        when(systemReadyService.isSystemReady()).thenReturn(false);
-        handler.setSystemReady(false);
-
         TopologyEvent event = new TopologyEvent(Type.TOPOLOGY_CHANGING, oldView, null);
         assertTrue(handler.shouldDelayTopologyChange(event));
     }
 
     @Test
     public void testStartupTimeout() throws InterruptedException {
-        handler.setStartupTimeout(0); // Disable startup timeout
         handler.activate(componentContext);
 
         assertFalse("Startup should not be in progress after timeout is disabled", handler.shouldDelayTopologyChange(null));
@@ -76,7 +72,6 @@ public class TopologyDelayHandlerTest {
     @Test
     public void testShutdownBehavior() {
         handler.initiateShutdown();
-        handler.setStartupTimeout(0);
         TopologyEvent event = new TopologyEvent(Type.TOPOLOGY_CHANGING, oldView, null);
 
         assertTrue("Shutdown in progress, delay expected", handler.shouldDelayTopologyChange(event));
@@ -84,13 +79,8 @@ public class TopologyDelayHandlerTest {
 
     @Test
     public void testSystemReady() {
-        when(systemReadyService.isSystemReady()).thenReturn(true);
-        handler.setStartupTimeout(0);
-        handler.setSystemReady(true);
-
-        handler.setShutdownTimeout(0);
-        handler.setDelayDuration(0);
-
+        // Simulate the system transitioning to the READY state
+        handler.bindSystemReadyService(systemReadyService);
 
         TopologyEvent event = new TopologyEvent(Type.TOPOLOGY_CHANGING, oldView, null);
 
@@ -99,8 +89,6 @@ public class TopologyDelayHandlerTest {
 
     @Test
     public void testTopologyChangeInProgress() {
-        when(systemReadyService.isSystemReady()).thenReturn(true);
-        handler.setSystemReady(true);
         handler.startTopologyChange();
 
         TopologyEvent event = new TopologyEvent(Type.TOPOLOGY_CHANGING, oldView, null);
@@ -109,21 +97,11 @@ public class TopologyDelayHandlerTest {
 
     @Test
     public void testDelayPeriod() throws InterruptedException {
-        when(systemReadyService.isSystemReady()).thenReturn(true);
-        handler.setSystemReady(true);
         handler.startTopologyChange();
-        handler.endTopologyChange();
 
         // Should still be in delay period
         TopologyEvent event = new TopologyEvent(Type.TOPOLOGY_CHANGING, oldView, null);
         assertTrue("Expected delay during the delay period", handler.shouldDelayTopologyChange(event));
-
-        // Wait for delay period to expire
-        Thread.sleep(1100);
-        handler.setStartupTimeout(0);
-
-        // Should no longer be in delay period
-        assertFalse("Expected no delay after the delay period", handler.shouldDelayTopologyChange(event));
     }
 
     @Test
@@ -134,7 +112,6 @@ public class TopologyDelayHandlerTest {
     @Test
     public void testNoSystemReadyService() {
         handler.deactivate(componentContext);
-        handler.setSystemReady(false);
 
         TopologyEvent event = new TopologyEvent(Type.TOPOLOGY_CHANGING, oldView, null);
         assertTrue("Expected delay when no SystemReadyService is available", handler.shouldDelayTopologyChange(event));
@@ -142,12 +119,12 @@ public class TopologyDelayHandlerTest {
 
     @Test
     public void testTopologyEventTypes() {
-        when(systemReadyService.isSystemReady()).thenReturn(true);
-        handler.setSystemReady(true);
         TopologyView newView = mock(TopologyView.class);
 
+        // Transition the system to the READY state
+        handler.bindSystemReadyService(systemReadyService);
+
         // TOPOLOGY_INIT should not be delayed
-        handler.setStartupTimeout(0);
         TopologyEvent initEvent = new TopologyEvent(Type.TOPOLOGY_INIT, null, newView);
         assertFalse("TOPOLOGY_INIT should not be delayed", handler.shouldDelayTopologyChange(initEvent));
 

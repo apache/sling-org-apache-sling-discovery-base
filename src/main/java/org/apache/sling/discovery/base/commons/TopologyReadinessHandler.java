@@ -20,6 +20,7 @@ package org.apache.sling.discovery.base.commons;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.sling.discovery.TopologyEvent;
 import org.osgi.service.component.annotations.Activate;
@@ -33,90 +34,95 @@ import org.slf4j.LoggerFactory;
 import org.osgi.service.component.ComponentContext;
 
 /**
- * Handles topology delay mechanism to ensure system stability during topology changes.
- * This component can be used to delay topology changes until the system is ready.
+ * Coordinates topology changes based on system readiness state.
+ * This component ensures that topology changes only occur when the system is in a stable state,
+ * both during startup and shutdown sequences.
+ * 
+ * The handler manages three main states:
+ * 1. STARTUP: Initial state when the system is starting up
+ * 2. READY: System is ready for normal operation and topology changes
+ * 3. SHUTDOWN: System is in the process of shutting down
+ * 
+ * State Transitions:
+ * - System starts in STARTUP state
+ * - Transitions to READY state only when SystemReadyService is bound
+ * - Transitions to SHUTDOWN state when:
+ *   * SystemReadyService is unbound
+ *   * Component is deactivated
+ * 
+ * Note: This component requires a SystemReadyService to function properly.
+ * The system will remain in STARTUP state until SystemReadyService is bound,
+ * and will transition to SHUTDOWN state when the service is unbound.
  */
-@Component(service = TopologyDelayHandler.class)
-public class TopologyDelayHandler {
+@Component(service = TopologyReadinessHandler.class)
+public class TopologyReadinessHandler {
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
-    private final AtomicBoolean systemReady = new AtomicBoolean(false);
+    /**
+     * Represents the possible states of the system.
+     * State transitions are controlled by SystemReadyService binding/unbinding
+     * and component lifecycle events.
+     */
+    private enum SystemState {
+        STARTUP,    // Initial state, waiting for SystemReadyService
+        READY,      // System is ready for normal operation
+        SHUTDOWN    // System is shutting down
+    }
+
+    private final AtomicReference<SystemState> systemState = new AtomicReference<>(SystemState.STARTUP);
     private final AtomicLong lastTopologyChangeTime = new AtomicLong(0);
     private final AtomicBoolean topologyChangeInProgress = new AtomicBoolean(false);
-    private final AtomicBoolean shutdownInProgress = new AtomicBoolean(false);
-    private final AtomicBoolean startupInProgress = new AtomicBoolean(true);
 
-    private long delayDuration = 5000; // Default 5 second delay
+    private long delayDuration = 5000; // Default 5 second delay between topology changes
     private long shutdownTimeout = 30000; // Default 30 second shutdown timeout
-    private long startupTimeout = 60000; // Default 60 second startup timeout
-    private Thread startupMonitorThread;
 
-    @Reference(cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC)
-    private volatile SystemReadyService systemReadyService;
+    @Reference(cardinality = ReferenceCardinality.MANDATORY, policy = ReferencePolicy.STATIC)
+    private SystemReadyService systemReadyService;
+
+    @Reference
+    private BaseDiscoveryService discoveryService;
 
     @Activate
     protected void activate(ComponentContext context) {
-        logger.info("TopologyDelayHandler activated");
-        shutdownInProgress.set(false);
-        startupInProgress.set(true);
-        
-        // Only start monitor thread if timeout is not disabled (0)
-        if (startupTimeout > 0) {
-            startupMonitorThread = new Thread(() -> {
-                try {
-                    Thread.sleep(startupTimeout);
-                    if (startupInProgress.get()) {
-                        logger.warn("Startup timeout reached, forcing system ready state");
-                        startupInProgress.set(false);
-                        setSystemReady(true);
-                    }
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
-            }, "TopologyDelayHandler-StartupMonitor");
-            startupMonitorThread.start();
-        } else {
-            // If timeout is disabled, consider startup complete
-            startupInProgress.set(false);
-        }
+        logger.info("TopologyReadinessHandler activated - entering STARTUP state");
+        systemState.set(SystemState.STARTUP);
     }
 
     @Deactivate
     protected void deactivate(ComponentContext context) {
-        logger.info("TopologyDelayHandler deactivated");
-        if (startupMonitorThread != null) {
-            startupMonitorThread.interrupt();
-        }
+        logger.info("TopologyReadinessHandler deactivated");
         initiateShutdown();
     }
 
     protected void bindSystemReadyService(SystemReadyService service) {
-        logger.debug("SystemReadyService bound");
-        this.systemReadyService = service;
-        // If we're in startup and the system ready service is available, mark system as ready
-        if (startupInProgress.get() && service.isSystemReady()) {
-            startupInProgress.set(false);
-            setSystemReady(true);
+        logger.debug("SystemReadyService bound - transitioning to READY state");
+        if (systemState.compareAndSet(SystemState.STARTUP, SystemState.READY)) {
+            logger.info("System state changed to READY");
         }
     }
 
     protected void unbindSystemReadyService(SystemReadyService service) {
-        logger.debug("SystemReadyService unbound");
-        this.systemReadyService = null;
-        // If we're in shutdown and the system ready service is removed, mark system as not ready
-        if (shutdownInProgress.get()) {
-            setSystemReady(false);
-        }
+        logger.debug("SystemReadyService unbound - initiating shutdown");
+        initiateShutdown();
     }
 
     /**
      * Initiate the shutdown process
      */
     protected void initiateShutdown() {
-        if (shutdownInProgress.compareAndSet(false, true)) {
+        if (systemState.compareAndSet(SystemState.READY, SystemState.SHUTDOWN) || 
+            systemState.compareAndSet(SystemState.STARTUP, SystemState.SHUTDOWN)) {
             logger.info("Initiating shutdown process");
-            setSystemReady(false);
+            
+            // Mark current view as not current
+            if (discoveryService != null) {
+                DefaultTopologyView oldView = discoveryService.getOldView();
+                if (oldView != null) {
+                    logger.info("Marking current topology view as not current during shutdown");
+                    oldView.setNotCurrent();
+                }
+            }
             
             // If shutdown timeout is disabled, don't wait
             if (shutdownTimeout <= 0) {
@@ -152,18 +158,6 @@ public class TopologyDelayHandler {
     }
 
     /**
-     * Set the startup timeout in milliseconds
-     * @param timeout the startup timeout in milliseconds
-     */
-    public void setStartupTimeout(long timeout) {
-        this.startupTimeout = timeout;
-        // If timeout is set to 0, consider startup complete
-        if (timeout == 0 && startupInProgress.get()) {
-            startupInProgress.set(false);
-        }
-    }
-
-    /**
      * Set the delay duration in milliseconds
      * @param delayDuration the delay duration in milliseconds
      */
@@ -172,7 +166,7 @@ public class TopologyDelayHandler {
     }
 
     /**
-     * Check if a topology change should be delayed
+     * Check if a topology change should be delayed based on system readiness
      * @param event the topology event
      * @return true if the change should be delayed, false otherwise
      */
@@ -181,21 +175,11 @@ public class TopologyDelayHandler {
             return false;
         }
 
-        // If startup is in progress, delay all topology changes
-        if (startupInProgress.get()) {
-            logger.debug("Startup in progress, delaying topology change");
-            return true;
-        }
-
-        // If shutdown is in progress, delay all topology changes
-        if (shutdownInProgress.get()) {
-            logger.debug("Shutdown in progress, delaying topology change");
-            return true;
-        }
-
-        // If system is not ready and we have a system ready service, delay
-        if (systemReadyService != null && !systemReady.get()) {
-            logger.debug("System not ready, delaying topology change");
+        SystemState currentState = systemState.get();
+        
+        // If system is not in READY state, delay all topology changes
+        if (currentState != SystemState.READY) {
+            logger.debug("System in {} state, delaying topology change", currentState);
             return true;
         }
 
@@ -231,18 +215,10 @@ public class TopologyDelayHandler {
     }
 
     /**
-     * Set the system ready state
-     * @param ready true if the system is ready
-     */
-    public void setSystemReady(boolean ready) {
-        systemReady.set(ready);
-    }
-
-    /**
      * Check if the system is ready
-     * @return true if the system is ready
+     * @return true if the system is in READY state
      */
     public boolean isSystemReady() {
-        return systemReady.get();
+        return systemState.get() == SystemState.READY;
     }
 } 

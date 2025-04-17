@@ -45,14 +45,14 @@ public abstract class BaseDiscoveryService implements DiscoveryService {
     private DefaultTopologyView oldView;
 
     @Reference
-    private TopologyDelayHandler topologyDelayHandler;
+    private TopologyReadinessHandler topologyReadinessHandler;
 
     protected abstract ClusterViewService getClusterViewService();
     
     protected abstract AnnouncementRegistry getAnnouncementRegistry();
     
     protected abstract void handleIsolatedFromTopology();
-    
+
     protected DefaultTopologyView getOldView() {
         return oldView;
     }
@@ -100,7 +100,7 @@ public abstract class BaseDiscoveryService implements DiscoveryService {
         topology.addInstances(attachedInstances);
 
         // Check if topology changes should be delayed
-        if (topologyDelayHandler != null && topologyDelayHandler.shouldDelayTopologyChange(null)) {
+        if (topologyReadinessHandler != null && topologyReadinessHandler.shouldDelayTopologyChange(null)) {
             logger.debug("getTopology: topology changes are delayed, returning old view");
             return oldView;
         }
@@ -113,16 +113,16 @@ public abstract class BaseDiscoveryService implements DiscoveryService {
             return;
         }
 
-        if (topologyDelayHandler != null) {
-            if (topologyDelayHandler.shouldDelayTopologyChange(event)) {
+        if (topologyReadinessHandler != null) {
+            if (topologyReadinessHandler.shouldDelayTopologyChange(event)) {
                 logger.debug("handleTopologyEvent: delaying topology event: {}", event);
                 return;
             }
 
             if (event.getType() == Type.TOPOLOGY_CHANGING) {
-                topologyDelayHandler.startTopologyChange();
+                topologyReadinessHandler.startTopologyChange();
             } else if (event.getType() == Type.TOPOLOGY_CHANGED) {
-                topologyDelayHandler.endTopologyChange();
+                topologyReadinessHandler.endTopologyChange();
             }
         }
 

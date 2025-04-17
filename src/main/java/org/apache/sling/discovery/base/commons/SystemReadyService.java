@@ -18,16 +18,37 @@
  */
 package org.apache.sling.discovery.base.commons;
 
+import org.osgi.annotation.versioning.ProviderType;
+
 /**
- * Service interface for checking if the system is ready for topology changes.
- * Implementations of this service can be used to delay topology changes until
- * the system is in a stable state.
+ * Service interface that indicates the system is ready for operation.
+ * This service should only be registered when the system is fully initialized
+ * and ready to handle requests.
+ * 
+ * <p>
+ * The service registration itself indicates system readiness. When the service
+ * is registered, the system is ready. When the service is unregistered, the
+ * system is shutting down.
+ * </p>
+ * 
+ * <p>
+ * Services that depend on system readiness should use a mandatory reference
+ * to this service:
+ * </p>
+ * 
+ * <pre>
+ * {@code
+ * @Reference(cardinality = ReferenceCardinality.MANDATORY)
+ * private SystemReadyService systemReadyService;
+ * }
+ * </pre>
+ * 
+ * <p>
+ * This ensures that the depending service will only be activated when the
+ * system is ready, and will be deactivated when the system starts shutting down.
+ * </p>
  */
+@ProviderType
 public interface SystemReadyService {
-    
-    /**
-     * Check if the system is ready for topology changes
-     * @return true if the system is ready, false otherwise
-     */
-    boolean isSystemReady();
+    // Marker interface - service registration indicates system readiness
 } 
