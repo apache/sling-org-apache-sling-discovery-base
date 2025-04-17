@@ -53,7 +53,7 @@ public class TopologyDelayHandlerTest {
 
         oldView = mock(TopologyView.class);
         handler.activate(componentContext);
-        handler.setDelayDuration(1000); // 1 second delay for testing
+        handler.setDelayDuration(1100); // 1 second delay for testing
     }
 
     @Test
@@ -66,12 +66,35 @@ public class TopologyDelayHandlerTest {
     }
 
     @Test
+    public void testStartupTimeout() throws InterruptedException {
+        handler.setStartupTimeout(0); // Disable startup timeout
+        handler.activate(componentContext);
+
+        assertFalse("Startup should not be in progress after timeout is disabled", handler.shouldDelayTopologyChange(null));
+    }
+
+    @Test
+    public void testShutdownBehavior() {
+        handler.initiateShutdown();
+        handler.setStartupTimeout(0);
+        TopologyEvent event = new TopologyEvent(Type.TOPOLOGY_CHANGING, oldView, null);
+
+        assertTrue("Shutdown in progress, delay expected", handler.shouldDelayTopologyChange(event));
+    }
+
+    @Test
     public void testSystemReady() {
         when(systemReadyService.isSystemReady()).thenReturn(true);
+        handler.setStartupTimeout(0);
         handler.setSystemReady(true);
 
+        handler.setShutdownTimeout(0);
+        handler.setDelayDuration(0);
+
+
         TopologyEvent event = new TopologyEvent(Type.TOPOLOGY_CHANGING, oldView, null);
-        assertFalse(handler.shouldDelayTopologyChange(event));
+
+        assertFalse("Expected no delay when the system is ready", handler.shouldDelayTopologyChange(event));
     }
 
     @Test
@@ -93,13 +116,14 @@ public class TopologyDelayHandlerTest {
 
         // Should still be in delay period
         TopologyEvent event = new TopologyEvent(Type.TOPOLOGY_CHANGING, oldView, null);
-        assertTrue(handler.shouldDelayTopologyChange(event));
+        assertTrue("Expected delay during the delay period", handler.shouldDelayTopologyChange(event));
 
         // Wait for delay period to expire
         Thread.sleep(1100);
+        handler.setStartupTimeout(0);
 
         // Should no longer be in delay period
-        assertFalse(handler.shouldDelayTopologyChange(event));
+        assertFalse("Expected no delay after the delay period", handler.shouldDelayTopologyChange(event));
     }
 
     @Test
@@ -113,7 +137,7 @@ public class TopologyDelayHandlerTest {
         handler.setSystemReady(false);
 
         TopologyEvent event = new TopologyEvent(Type.TOPOLOGY_CHANGING, oldView, null);
-        assertFalse(handler.shouldDelayTopologyChange(event));
+        assertTrue("Expected delay when no SystemReadyService is available", handler.shouldDelayTopologyChange(event));
     }
 
     @Test
@@ -123,22 +147,23 @@ public class TopologyDelayHandlerTest {
         TopologyView newView = mock(TopologyView.class);
 
         // TOPOLOGY_INIT should not be delayed
+        handler.setStartupTimeout(0);
         TopologyEvent initEvent = new TopologyEvent(Type.TOPOLOGY_INIT, null, newView);
-        assertFalse(handler.shouldDelayTopologyChange(initEvent));
+        assertFalse("TOPOLOGY_INIT should not be delayed", handler.shouldDelayTopologyChange(initEvent));
 
         // TOPOLOGY_CHANGING should be delayed if in progress
         handler.startTopologyChange();
         TopologyEvent changingEvent = new TopologyEvent(Type.TOPOLOGY_CHANGING, oldView, null);
-        assertTrue(handler.shouldDelayTopologyChange(changingEvent));
+        assertTrue("TOPOLOGY_CHANGING should be delayed during topology change", handler.shouldDelayTopologyChange(changingEvent));
 
         // TOPOLOGY_CHANGED should not be delayed
         handler.endTopologyChange();
         TopologyEvent changedEvent = new TopologyEvent(Type.TOPOLOGY_CHANGED, oldView, newView);
         try {
-            Thread.sleep(1000);
+            Thread.sleep(1100);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        assertFalse(handler.shouldDelayTopologyChange(changedEvent));
+        assertFalse("TOPOLOGY_CHANGED should not be delayed after delay period", handler.shouldDelayTopologyChange(changedEvent));
     }
 } 

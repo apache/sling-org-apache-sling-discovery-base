@@ -44,8 +44,13 @@ public class TopologyDelayHandler {
     private final AtomicBoolean systemReady = new AtomicBoolean(false);
     private final AtomicLong lastTopologyChangeTime = new AtomicLong(0);
     private final AtomicBoolean topologyChangeInProgress = new AtomicBoolean(false);
+    private final AtomicBoolean shutdownInProgress = new AtomicBoolean(false);
+    private final AtomicBoolean startupInProgress = new AtomicBoolean(true);
 
     private long delayDuration = 5000; // Default 5 second delay
+    private long shutdownTimeout = 30000; // Default 30 second shutdown timeout
+    private long startupTimeout = 60000; // Default 60 second startup timeout
+    private Thread startupMonitorThread;
 
     @Reference(cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC)
     private volatile SystemReadyService systemReadyService;
@@ -53,21 +58,109 @@ public class TopologyDelayHandler {
     @Activate
     protected void activate(ComponentContext context) {
         logger.info("TopologyDelayHandler activated");
+        shutdownInProgress.set(false);
+        startupInProgress.set(true);
+        
+        // Only start monitor thread if timeout is not disabled (0)
+        if (startupTimeout > 0) {
+            startupMonitorThread = new Thread(() -> {
+                try {
+                    Thread.sleep(startupTimeout);
+                    if (startupInProgress.get()) {
+                        logger.warn("Startup timeout reached, forcing system ready state");
+                        startupInProgress.set(false);
+                        setSystemReady(true);
+                    }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }, "TopologyDelayHandler-StartupMonitor");
+            startupMonitorThread.start();
+        } else {
+            // If timeout is disabled, consider startup complete
+            startupInProgress.set(false);
+        }
     }
 
     @Deactivate
     protected void deactivate(ComponentContext context) {
         logger.info("TopologyDelayHandler deactivated");
+        if (startupMonitorThread != null) {
+            startupMonitorThread.interrupt();
+        }
+        initiateShutdown();
     }
 
     protected void bindSystemReadyService(SystemReadyService service) {
         logger.debug("SystemReadyService bound");
         this.systemReadyService = service;
+        // If we're in startup and the system ready service is available, mark system as ready
+        if (startupInProgress.get() && service.isSystemReady()) {
+            startupInProgress.set(false);
+            setSystemReady(true);
+        }
     }
 
     protected void unbindSystemReadyService(SystemReadyService service) {
         logger.debug("SystemReadyService unbound");
         this.systemReadyService = null;
+        // If we're in shutdown and the system ready service is removed, mark system as not ready
+        if (shutdownInProgress.get()) {
+            setSystemReady(false);
+        }
+    }
+
+    /**
+     * Initiate the shutdown process
+     */
+    protected void initiateShutdown() {
+        if (shutdownInProgress.compareAndSet(false, true)) {
+            logger.info("Initiating shutdown process");
+            setSystemReady(false);
+            
+            // If shutdown timeout is disabled, don't wait
+            if (shutdownTimeout <= 0) {
+                return;
+            }
+            
+            // Wait for running jobs to complete or timeout
+            long startTime = System.currentTimeMillis();
+            while (topologyChangeInProgress.get() && 
+                   (System.currentTimeMillis() - startTime) < shutdownTimeout) {
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            }
+            
+            if (topologyChangeInProgress.get()) {
+                logger.warn("Shutdown timeout reached while waiting for topology changes to complete");
+            } else {
+                logger.info("Shutdown completed successfully");
+            }
+        }
+    }
+
+    /**
+     * Set the shutdown timeout in milliseconds
+     * @param timeout the shutdown timeout in milliseconds
+     */
+    public void setShutdownTimeout(long timeout) {
+        this.shutdownTimeout = timeout;
+    }
+
+    /**
+     * Set the startup timeout in milliseconds
+     * @param timeout the startup timeout in milliseconds
+     */
+    public void setStartupTimeout(long timeout) {
+        this.startupTimeout = timeout;
+        // If timeout is set to 0, consider startup complete
+        if (timeout == 0 && startupInProgress.get()) {
+            startupInProgress.set(false);
+        }
     }
 
     /**
@@ -86,6 +179,18 @@ public class TopologyDelayHandler {
     public boolean shouldDelayTopologyChange(TopologyEvent event) {
         if (event == null) {
             return false;
+        }
+
+        // If startup is in progress, delay all topology changes
+        if (startupInProgress.get()) {
+            logger.debug("Startup in progress, delaying topology change");
+            return true;
+        }
+
+        // If shutdown is in progress, delay all topology changes
+        if (shutdownInProgress.get()) {
+            logger.debug("Shutdown in progress, delaying topology change");
+            return true;
         }
 
         // If system is not ready and we have a system ready service, delay
