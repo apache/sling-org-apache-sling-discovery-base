@@ -28,9 +28,6 @@ import org.apache.sling.discovery.base.connectors.announcement.AnnouncementRegis
 import org.apache.sling.discovery.commons.providers.spi.LocalClusterView;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.osgi.service.component.annotations.Reference;
-import org.apache.sling.discovery.TopologyEvent;
-import org.apache.sling.discovery.TopologyEvent.Type;
 
 /**
  * Abstract base class for DiscoveryService implementations which uses the 
@@ -43,9 +40,6 @@ public abstract class BaseDiscoveryService implements DiscoveryService {
 
     /** the old view previously valid and sent to the TopologyEventListeners **/
     private DefaultTopologyView oldView;
-
-    @Reference
-    private TopologyReadinessHandler topologyReadinessHandler;
 
     protected abstract ClusterViewService getClusterViewService();
     
@@ -99,37 +93,7 @@ public abstract class BaseDiscoveryService implements DiscoveryService {
                 .listInstances(localClusterView);
         topology.addInstances(attachedInstances);
 
-        // Check if topology changes should be delayed
-        if (topologyReadinessHandler != null && topologyReadinessHandler.shouldDelayTopologyChange(null)) {
-            logger.debug("getTopology: topology changes are delayed, returning old view");
-            return oldView;
-        }
-
         return topology;
-    }
-
-    protected void handleTopologyEvent(TopologyEvent event) {
-        if (event == null) {
-            return;
-        }
-
-        if (topologyReadinessHandler != null) {
-            if (topologyReadinessHandler.shouldDelayTopologyChange(event)) {
-                logger.debug("handleTopologyEvent: delaying topology event: {}", event);
-                return;
-            }
-
-            if (event.getType() == Type.TOPOLOGY_CHANGING) {
-                topologyReadinessHandler.startTopologyChange();
-            } else if (event.getType() == Type.TOPOLOGY_CHANGED) {
-                topologyReadinessHandler.endTopologyChange();
-            }
-        }
-
-        // Update old view when topology changes
-        if (event.getType() == Type.TOPOLOGY_CHANGED && event.getNewView() != null) {
-            setOldView((DefaultTopologyView) event.getNewView());
-        }
     }
 
 }

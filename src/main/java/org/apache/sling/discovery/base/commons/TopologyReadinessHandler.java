@@ -22,6 +22,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.apache.felix.hc.api.condition.SystemReady;
 import org.apache.sling.discovery.TopologyEvent;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
@@ -45,27 +46,27 @@ import org.osgi.service.component.ComponentContext;
  * 
  * State Transitions:
  * - System starts in STARTUP state
- * - Transitions to READY state only when SystemReadyService is bound
+ * - Transitions to READY state only when SystemReady service is bound
  * - Transitions to SHUTDOWN state when:
- *   * SystemReadyService is unbound
+ *   * SystemReady service is unbound
  *   * Component is deactivated
  * 
- * Note: This component requires a SystemReadyService to function properly.
- * The system will remain in STARTUP state until SystemReadyService is bound,
+ * Note: This component requires the Felix SystemReady service to function properly.
+ * The system will remain in STARTUP state until SystemReady service is bound,
  * and will transition to SHUTDOWN state when the service is unbound.
  */
-@Component(service = TopologyReadinessHandler.class)
+@Component(service = TopologyReadinessHandler.class, immediate = true)
 public class TopologyReadinessHandler {
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     /**
      * Represents the possible states of the system.
-     * State transitions are controlled by SystemReadyService binding/unbinding
+     * State transitions are controlled by SystemReady service binding/unbinding
      * and component lifecycle events.
      */
     private enum SystemState {
-        STARTUP,    // Initial state, waiting for SystemReadyService
+        STARTUP,    // Initial state, waiting for SystemReady service
         READY,      // System is ready for normal operation
         SHUTDOWN    // System is shutting down
     }
@@ -78,7 +79,7 @@ public class TopologyReadinessHandler {
     private long shutdownTimeout = 30000; // Default 30 second shutdown timeout
 
     @Reference(cardinality = ReferenceCardinality.MANDATORY, policy = ReferencePolicy.STATIC)
-    private SystemReadyService systemReadyService;
+    private volatile SystemReady systemReady;
 
     @Reference
     private BaseDiscoveryService discoveryService;
@@ -95,15 +96,15 @@ public class TopologyReadinessHandler {
         initiateShutdown();
     }
 
-    protected void bindSystemReadyService(SystemReadyService service) {
-        logger.debug("SystemReadyService bound - transitioning to READY state");
+    protected void bindSystemReady(SystemReady service) {
+        logger.debug("SystemReady service bound - transitioning to READY state");
         if (systemState.compareAndSet(SystemState.STARTUP, SystemState.READY)) {
             logger.info("System state changed to READY");
         }
     }
 
-    protected void unbindSystemReadyService(SystemReadyService service) {
-        logger.debug("SystemReadyService unbound - initiating shutdown");
+    protected void unbindSystemReady(SystemReady service) {
+        logger.debug("SystemReady service unbound - initiating shutdown");
         initiateShutdown();
     }
 
@@ -214,11 +215,4 @@ public class TopologyReadinessHandler {
         topologyChangeInProgress.set(false);
     }
 
-    /**
-     * Check if the system is ready
-     * @return true if the system is in READY state
-     */
-    public boolean isSystemReady() {
-        return systemState.get() == SystemState.READY;
-    }
-} 
+}

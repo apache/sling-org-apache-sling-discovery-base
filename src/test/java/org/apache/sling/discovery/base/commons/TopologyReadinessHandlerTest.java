@@ -23,6 +23,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import org.apache.felix.hc.api.condition.SystemReady;
 import org.apache.sling.discovery.TopologyEvent;
 import org.apache.sling.discovery.TopologyEvent.Type;
 import org.apache.sling.discovery.TopologyView;
@@ -35,20 +36,20 @@ import org.osgi.service.component.ComponentContext;
 public class TopologyReadinessHandlerTest {
 
     private TopologyReadinessHandler handler;
-    private SystemReadyService systemReadyService;
+    private SystemReady systemReadyService;
     private ComponentContext componentContext;
     private TopologyView oldView;
 
     @Before
     public void setup() {
         handler = new TopologyReadinessHandler();
-        systemReadyService = mock(SystemReadyService.class);
+        systemReadyService = mock(SystemReady.class);
         componentContext = mock(ComponentContext.class);
         BundleContext bundleContext = mock(BundleContext.class);
-        ServiceReference<SystemReadyService> serviceRef = mock(ServiceReference.class);
+        ServiceReference<SystemReady> serviceRef = mock(ServiceReference.class);
         
         when(componentContext.getBundleContext()).thenReturn(bundleContext);
-        when(bundleContext.getServiceReference(SystemReadyService.class)).thenReturn(serviceRef);
+        when(bundleContext.getServiceReference(SystemReady.class)).thenReturn(serviceRef);
         when(bundleContext.getService(serviceRef)).thenReturn(systemReadyService);
 
         oldView = mock(TopologyView.class);
@@ -80,7 +81,7 @@ public class TopologyReadinessHandlerTest {
     @Test
     public void testSystemReady() {
         // Simulate the system transitioning to the READY state
-        handler.bindSystemReadyService(systemReadyService);
+        handler.bindSystemReady(systemReadyService);
 
         TopologyEvent event = new TopologyEvent(Type.TOPOLOGY_CHANGING, oldView, null);
 
@@ -122,7 +123,7 @@ public class TopologyReadinessHandlerTest {
         TopologyView newView = mock(TopologyView.class);
 
         // Transition the system to the READY state
-        handler.bindSystemReadyService(systemReadyService);
+        handler.bindSystemReady(systemReadyService);
 
         // TOPOLOGY_INIT should not be delayed
         TopologyEvent initEvent = new TopologyEvent(Type.TOPOLOGY_INIT, null, newView);
