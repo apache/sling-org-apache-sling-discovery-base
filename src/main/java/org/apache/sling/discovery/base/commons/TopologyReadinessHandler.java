@@ -23,7 +23,9 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.felix.hc.api.condition.SystemReady;
+import org.apache.sling.discovery.DiscoveryService;
 import org.apache.sling.discovery.TopologyEvent;
+import org.apache.sling.discovery.TopologyView;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Deactivate;
@@ -82,7 +84,7 @@ public class TopologyReadinessHandler {
     private volatile SystemReady systemReady;
 
     @Reference
-    private BaseDiscoveryService discoveryService;
+    private DiscoveryService discoveryService;
 
     @Activate
     protected void activate(ComponentContext context) {
@@ -118,10 +120,10 @@ public class TopologyReadinessHandler {
             
             // Mark current view as not current
             if (discoveryService != null) {
-                DefaultTopologyView oldView = discoveryService.getOldView();
-                if (oldView != null) {
+                TopologyView currentView = discoveryService.getTopology();
+                if (currentView instanceof DefaultTopologyView) {
                     logger.info("Marking current topology view as not current during shutdown");
-                    oldView.setNotCurrent();
+                    ((DefaultTopologyView) currentView).setNotCurrent();
                 }
             }
             
