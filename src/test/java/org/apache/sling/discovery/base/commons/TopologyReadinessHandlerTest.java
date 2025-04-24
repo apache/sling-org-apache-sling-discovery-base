@@ -24,6 +24,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import org.apache.felix.hc.api.condition.SystemReady;
+import org.apache.sling.discovery.DiscoveryService;
 import org.apache.sling.discovery.TopologyEvent;
 import org.apache.sling.discovery.TopologyEvent.Type;
 import org.apache.sling.discovery.TopologyView;
@@ -111,11 +112,40 @@ public class TopologyReadinessHandlerTest {
     }
 
     @Test
-    public void testNoSystemReadyService() {
+    public void testFailingSystemReadyService() {
+        // Transition to READY state by binding the SystemReady service
+        handler.bindSystemReady(systemReadyService);
         handler.deactivate(componentContext);
 
         TopologyEvent event = new TopologyEvent(Type.TOPOLOGY_CHANGING, oldView, null);
-        assertTrue("Expected delay when no SystemReadyService is available", handler.shouldDelayTopologyChange(event));
+        assertTrue("Expected delay when no SystemReady Service is available", handler.shouldDelayTopologyChange(event));
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testInvalidTransitionFromShutdown() {
+        handler.bindSystemReady(systemReadyService);
+        handler.initiateShutdown();
+        handler.bindSystemReady(systemReadyService);
+    }
+
+    @Test
+    public void testValidTransitionSequence() {
+        // Initially, the system should be in the STARTUP state
+        TopologyView newView = mock(TopologyView.class);
+        TopologyEvent event = new TopologyEvent(Type.TOPOLOGY_CHANGING, oldView, null);
+        assertTrue(handler.shouldDelayTopologyChange(event)); // STARTUP state delays changes
+
+        // Transition to READY state by binding the SystemReady service
+        handler.bindSystemReady(systemReadyService);
+
+        // Use a new event to ensure consistency
+        TopologyEvent readyEvent = new TopologyEvent(Type.TOPOLOGY_CHANGED, oldView, newView);
+        assertFalse(handler.shouldDelayTopologyChange(readyEvent)); // READY state does not delay changes
+
+        // Transition to SHUTDOWN state by unbind SystemReady (transitions to SHUTDOWN)
+        TopologyEvent shutdownEvent = new TopologyEvent(Type.TOPOLOGY_CHANGING, oldView, null);
+        handler.unbindSystemReady(systemReadyService);
+        assertTrue(handler.shouldDelayTopologyChange(shutdownEvent)); // SHUTDOWN state delays changes
     }
 
     @Test

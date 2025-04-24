@@ -25,6 +25,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.apache.felix.hc.api.condition.SystemReady;
 import org.apache.sling.discovery.DiscoveryService;
 import org.apache.sling.discovery.TopologyEvent;
+import org.apache.sling.discovery.TopologyEventListener;
 import org.apache.sling.discovery.TopologyView;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
@@ -57,26 +58,40 @@ import org.osgi.service.component.ComponentContext;
  * The system will remain in STARTUP state until SystemReady service is bound,
  * and will transition to SHUTDOWN state when the service is unbound.
  */
-@Component(service = TopologyReadinessHandler.class, immediate = true)
-public class TopologyReadinessHandler {
+@Component(service = {TopologyReadinessHandler.class, TopologyEventListener.class}, immediate = true)
+public class TopologyReadinessHandler implements TopologyEventListener {
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     /**
-     * Represents the possible states of the system.
-     * State transitions are controlled by SystemReady service binding/unbinding
-     * and component lifecycle events.
+     * Represents the possible states of the system with explicit transitions.
      */
     private enum SystemState {
-        STARTUP,    // Initial state, waiting for SystemReady service
-        READY,      // System is ready for normal operation
-        SHUTDOWN    // System is shutting down
+        STARTUP {
+            @Override
+            protected SystemState[] getAllowedTransitions() {
+                return new SystemState[] { READY };
+            }
+        },
+        READY {
+            @Override
+            protected SystemState[] getAllowedTransitions() {
+                return new SystemState[] { SHUTDOWN };
+            }
+        },
+        SHUTDOWN {
+            @Override
+            protected SystemState[] getAllowedTransitions() {
+                return new SystemState[] { };  // No transitions allowed from SHUTDOWN
+            }
+        };
+
+        protected abstract SystemState[] getAllowedTransitions();
     }
 
-    private final AtomicReference<SystemState> systemState = new AtomicReference<>(SystemState.STARTUP);
-    private final AtomicLong lastTopologyChangeTime = new AtomicLong(0);
+    private final StateMachine stateMachine = new StateMachine();
     private final AtomicBoolean topologyChangeInProgress = new AtomicBoolean(false);
-
+    private final AtomicLong lastTopologyChangeTime = new AtomicLong(0);
     private long delayDuration = 5000; // Default 5 second delay between topology changes
     private long shutdownTimeout = 30000; // Default 30 second shutdown timeout
 
@@ -88,34 +103,31 @@ public class TopologyReadinessHandler {
 
     @Activate
     protected void activate(ComponentContext context) {
-        logger.info("TopologyReadinessHandler activated - entering STARTUP state");
-        systemState.set(SystemState.STARTUP);
+        logger.info("TopologyReadinessHandler activated - in STARTUP state");
+        // State is already STARTUP by default
     }
 
     @Deactivate
     protected void deactivate(ComponentContext context) {
         logger.info("TopologyReadinessHandler deactivated");
-        initiateShutdown();
+        stateMachine.transitionTo(SystemState.SHUTDOWN);
     }
 
     protected void bindSystemReady(SystemReady service) {
         logger.debug("SystemReady service bound - transitioning to READY state");
-        if (systemState.compareAndSet(SystemState.STARTUP, SystemState.READY)) {
-            logger.info("System state changed to READY");
-        }
+        stateMachine.transitionTo(SystemState.READY);
     }
 
     protected void unbindSystemReady(SystemReady service) {
-        logger.debug("SystemReady service unbound - initiating shutdown");
-        initiateShutdown();
+        logger.debug("SystemReady service unbound - transitioning to SHUTDOWN state");
+        stateMachine.transitionTo(SystemState.SHUTDOWN);
     }
 
     /**
      * Initiate the shutdown process
      */
     protected void initiateShutdown() {
-        if (systemState.compareAndSet(SystemState.READY, SystemState.SHUTDOWN) || 
-            systemState.compareAndSet(SystemState.STARTUP, SystemState.SHUTDOWN)) {
+        if (stateMachine.getCurrentState() == SystemState.READY) {
             logger.info("Initiating shutdown process");
             
             // Mark current view as not current
@@ -178,11 +190,10 @@ public class TopologyReadinessHandler {
             return false;
         }
 
-        SystemState currentState = systemState.get();
-        
-        // If system is not in READY state, delay all topology changes
-        if (currentState != SystemState.READY) {
-            logger.debug("System in {} state, delaying topology change", currentState);
+        // If system is not READY, delay all topology changes
+        if (!stateMachine.isReady()) {
+            logger.debug("System in {} state, delaying topology change", 
+                stateMachine.getCurrentState());
             return true;
         }
 
@@ -215,6 +226,61 @@ public class TopologyReadinessHandler {
      */
     public void endTopologyChange() {
         topologyChangeInProgress.set(false);
+    }
+
+    @Override
+    public void handleTopologyEvent(TopologyEvent event) {
+        if (event == null) {
+            return;
+        }
+
+        if (shouldDelayTopologyChange(event)) {
+            logger.debug("handleTopologyEvent: delaying topology event: {}", event);
+            return;
+        }
+
+        switch (event.getType()) {
+            case TOPOLOGY_CHANGING:
+                startTopologyChange();
+                break;
+            case TOPOLOGY_CHANGED:
+                endTopologyChange();
+                break;
+            default:
+                break;
+        }
+    }
+
+    private final class StateMachine {
+        private final AtomicReference<SystemState> currentState = new AtomicReference<>(SystemState.STARTUP);
+
+        public void transitionTo(SystemState newState) {
+            SystemState current = currentState.get();
+            if (!isValidTransition(current, newState)) {
+                throw new IllegalStateException(
+                    String.format("Invalid state transition from %s to %s", current, newState)
+                );
+            }
+            
+            if (currentState.compareAndSet(current, newState)) {
+                logger.info("System state transitioned from {} to {}", current, newState);
+            }
+        }
+
+        private boolean isValidTransition(SystemState from, SystemState to) {
+            for (SystemState allowed : from.getAllowedTransitions()) {
+                if (allowed == to) return true;
+            }
+            return false;
+        }
+
+        public SystemState getCurrentState() {
+            return currentState.get();
+        }
+
+        public boolean isReady() {
+            return getCurrentState() == SystemState.READY;
+        }
     }
 
 }
