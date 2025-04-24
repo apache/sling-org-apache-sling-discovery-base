@@ -7,9 +7,15 @@
     is:=warn
 
 Bundle-Version: 3.0.0
+Import-Package: \
+    org.apache.sling.discovery;version="[1.0,2.0)",\
+    org.apache.sling.discovery.commons;version="[1.0,2.0)",\
+    org.apache.felix.hc.api.condition;version="[1.0,2.0)",\
+    *
+
 Export-Package: \
-    org.apache.sling.discovery.base.commons;version=2.1.0,\
-    org.apache.sling.discovery.base.connectors;version=1.0.1,\
+    org.apache.sling.discovery.base.commons;version=${project.version},\
+    org.apache.sling.discovery.base.connectors;version=${project.version},\
     org.apache.sling.discovery.base.connectors.announcement;version=3.0.0,\
     org.apache.sling.discovery.base.connectors.ping;version=2.0.0,\
     org.apache.sling.discovery.base.connectors.ping.wl;version=1.0.1

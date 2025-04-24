@@ -58,7 +58,12 @@ import org.osgi.service.component.ComponentContext;
  * The system will remain in STARTUP state until SystemReady service is bound,
  * and will transition to SHUTDOWN state when the service is unbound.
  */
-@Component(service = {TopologyReadinessHandler.class, TopologyEventListener.class}, immediate = true)
+@Component(service = {TopologyReadinessHandler.class, TopologyEventListener.class},
+        immediate = true,
+        property = {
+            "service.description=Topology Readiness Handler",
+            "service.vendor=The Apache Software Foundation"}
+)
 public class TopologyReadinessHandler implements TopologyEventListener {
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
