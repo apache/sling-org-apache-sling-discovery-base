@@ -18,15 +18,9 @@
  */
 package org.apache.sling.discovery.base.commons;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.felix.hc.api.condition.SystemReady;
-import org.apache.sling.discovery.DiscoveryService;
-import org.apache.sling.discovery.TopologyEvent;
-import org.apache.sling.discovery.TopologyEventListener;
-import org.apache.sling.discovery.TopologyView;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Deactivate;
@@ -58,13 +52,8 @@ import org.osgi.service.component.ComponentContext;
  * The system will remain in STARTUP state until SystemReady service is bound,
  * and will transition to SHUTDOWN state when the service is unbound.
  */
-@Component(service = {TopologyReadinessHandler.class, TopologyEventListener.class},
-        immediate = true,
-        property = {
-            "service.description=Topology Readiness Handler",
-            "service.vendor=The Apache Software Foundation"}
-)
-public class TopologyReadinessHandler implements TopologyEventListener {
+@Component(service = TopologyReadinessHandler.class, immediate = true)
+public class TopologyReadinessHandler {
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
@@ -95,21 +84,15 @@ public class TopologyReadinessHandler implements TopologyEventListener {
     }
 
     private final StateMachine stateMachine = new StateMachine();
-    private final AtomicBoolean topologyChangeInProgress = new AtomicBoolean(false);
-    private final AtomicLong lastTopologyChangeTime = new AtomicLong(0);
-    private long delayDuration = 5000; // Default 5 second delay between topology changes
-    private long shutdownTimeout = 30000; // Default 30 second shutdown timeout
 
     @Reference(cardinality = ReferenceCardinality.MANDATORY, policy = ReferencePolicy.STATIC)
     private volatile SystemReady systemReady;
 
-    @Reference
-    private DiscoveryService discoveryService;
+    private volatile DefaultTopologyView currentView;
 
     @Activate
     protected void activate(ComponentContext context) {
         logger.info("TopologyReadinessHandler activated - in STARTUP state");
-        // State is already STARTUP by default
     }
 
     @Deactivate
@@ -118,7 +101,7 @@ public class TopologyReadinessHandler implements TopologyEventListener {
         stateMachine.transitionTo(SystemState.SHUTDOWN);
     }
 
-    protected void bindSystemReady(SystemReady service) {
+    public void bindSystemReady(SystemReady service) {
         logger.debug("SystemReady service bound - transitioning to READY state");
         stateMachine.transitionTo(SystemState.READY);
     }
@@ -131,129 +114,33 @@ public class TopologyReadinessHandler implements TopologyEventListener {
     /**
      * Initiate the shutdown process
      */
-    protected void initiateShutdown() {
+    public void initiateShutdown() {
         if (stateMachine.getCurrentState() == SystemState.READY) {
             logger.info("Initiating shutdown process");
-            
-            // Mark current view as not current
-            if (discoveryService != null) {
-                TopologyView currentView = discoveryService.getTopology();
-                if (currentView instanceof DefaultTopologyView) {
-                    logger.info("Marking current topology view as not current during shutdown");
-                    ((DefaultTopologyView) currentView).setNotCurrent();
-                }
+            // Mark the current view as not current to trigger TOPOLOGY_CHANGING
+            if (currentView != null) {
+                logger.info("Marking current view as not current during shutdown");
+                currentView.setNotCurrent();
             }
-            
-            // If shutdown timeout is disabled, don't wait
-            if (shutdownTimeout <= 0) {
-                return;
-            }
-            
-            // Wait for running jobs to complete or timeout
-            long startTime = System.currentTimeMillis();
-            while (topologyChangeInProgress.get() && 
-                   (System.currentTimeMillis() - startTime) < shutdownTimeout) {
-                try {
-                    Thread.sleep(100);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    break;
-                }
-            }
-            
-            if (topologyChangeInProgress.get()) {
-                logger.warn("Shutdown timeout reached while waiting for topology changes to complete");
-            } else {
-                logger.info("Shutdown completed successfully");
-            }
+            stateMachine.transitionTo(SystemState.SHUTDOWN);
+            logger.info("Shutdown completed successfully");
         }
-    }
-
-    /**
-     * Set the shutdown timeout in milliseconds
-     * @param timeout the shutdown timeout in milliseconds
-     */
-    public void setShutdownTimeout(long timeout) {
-        this.shutdownTimeout = timeout;
-    }
-
-    /**
-     * Set the delay duration in milliseconds
-     * @param delayDuration the delay duration in milliseconds
-     */
-    public void setDelayDuration(long delayDuration) {
-        this.delayDuration = delayDuration;
     }
 
     /**
      * Check if a topology change should be delayed based on system readiness
-     * @param event the topology event
      * @return true if the change should be delayed, false otherwise
      */
-    public boolean shouldDelayTopologyChange(TopologyEvent event) {
-        if (event == null) {
-            return false;
-        }
-
-        // If system is not READY, delay all topology changes
-        if (!stateMachine.isReady()) {
-            logger.debug("System in {} state, delaying topology change", 
-                stateMachine.getCurrentState());
-            return true;
-        }
-
-        // If we're in the middle of a topology change, delay
-        if (topologyChangeInProgress.get()) {
-            logger.debug("Topology change in progress, delaying new change");
-            return true;
-        }
-
-        // If we're within the delay period from the last change, delay
-        long now = System.currentTimeMillis();
-        if (now - lastTopologyChangeTime.get() < delayDuration) {
-            logger.debug("Within delay period from last change, delaying topology change");
-            return true;
-        }
-
-        return false;
+    public boolean shouldDelayTopologyChange() {
+        return !stateMachine.isReady();
     }
 
     /**
-     * Mark the start of a topology change
+     * Set the current topology view
+     * @param view the current topology view
      */
-    public void startTopologyChange() {
-        topologyChangeInProgress.set(true);
-        lastTopologyChangeTime.set(System.currentTimeMillis());
-    }
-
-    /**
-     * Mark the end of a topology change
-     */
-    public void endTopologyChange() {
-        topologyChangeInProgress.set(false);
-    }
-
-    @Override
-    public void handleTopologyEvent(TopologyEvent event) {
-        if (event == null) {
-            return;
-        }
-
-        if (shouldDelayTopologyChange(event)) {
-            logger.debug("handleTopologyEvent: delaying topology event: {}", event);
-            return;
-        }
-
-        switch (event.getType()) {
-            case TOPOLOGY_CHANGING:
-                startTopologyChange();
-                break;
-            case TOPOLOGY_CHANGED:
-                endTopologyChange();
-                break;
-            default:
-                break;
-        }
+    public void setCurrentView(DefaultTopologyView view) {
+        this.currentView = view;
     }
 
     private final class StateMachine {
@@ -287,5 +174,4 @@ public class TopologyReadinessHandler implements TopologyEventListener {
             return getCurrentState() == SystemState.READY;
         }
     }
-
 }

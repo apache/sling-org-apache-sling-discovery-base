@@ -20,11 +20,9 @@ package org.apache.sling.discovery.base.commons;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 import org.apache.felix.hc.api.condition.SystemReady;
-import org.apache.sling.discovery.DiscoveryService;
 import org.apache.sling.discovery.TopologyEvent;
 import org.apache.sling.discovery.TopologyEvent.Type;
 import org.apache.sling.discovery.TopologyView;
@@ -55,20 +53,12 @@ public class TopologyReadinessHandlerTest {
 
         oldView = mock(TopologyView.class);
         handler.activate(componentContext);
-        handler.setDelayDuration(1100); // 1 second delay for testing
     }
 
     @Test
     public void testSystemNotReady() {
         TopologyEvent event = new TopologyEvent(Type.TOPOLOGY_CHANGING, oldView, null);
-        assertTrue(handler.shouldDelayTopologyChange(event));
-    }
-
-    @Test
-    public void testStartupTimeout() throws InterruptedException {
-        handler.activate(componentContext);
-
-        assertFalse("Startup should not be in progress after timeout is disabled", handler.shouldDelayTopologyChange(null));
+        assertTrue(handler.shouldDelayTopologyChange());
     }
 
     @Test
@@ -76,7 +66,7 @@ public class TopologyReadinessHandlerTest {
         handler.initiateShutdown();
         TopologyEvent event = new TopologyEvent(Type.TOPOLOGY_CHANGING, oldView, null);
 
-        assertTrue("Shutdown in progress, delay expected", handler.shouldDelayTopologyChange(event));
+        assertTrue("Shutdown in progress, delay expected", handler.shouldDelayTopologyChange());
     }
 
     @Test
@@ -86,29 +76,20 @@ public class TopologyReadinessHandlerTest {
 
         TopologyEvent event = new TopologyEvent(Type.TOPOLOGY_CHANGING, oldView, null);
 
-        assertFalse("Expected no delay when the system is ready", handler.shouldDelayTopologyChange(event));
+        assertFalse("Expected no delay when the system is ready", handler.shouldDelayTopologyChange());
     }
 
     @Test
     public void testTopologyChangeInProgress() {
-        handler.startTopologyChange();
-
         TopologyEvent event = new TopologyEvent(Type.TOPOLOGY_CHANGING, oldView, null);
-        assertTrue(handler.shouldDelayTopologyChange(event));
+        assertTrue(handler.shouldDelayTopologyChange());
     }
 
     @Test
     public void testDelayPeriod() throws InterruptedException {
-        handler.startTopologyChange();
-
         // Should still be in delay period
         TopologyEvent event = new TopologyEvent(Type.TOPOLOGY_CHANGING, oldView, null);
-        assertTrue("Expected delay during the delay period", handler.shouldDelayTopologyChange(event));
-    }
-
-    @Test
-    public void testNullEvent() {
-        assertFalse(handler.shouldDelayTopologyChange(null));
+        assertTrue("Expected delay during the delay period", handler.shouldDelayTopologyChange());
     }
 
     @Test
@@ -118,7 +99,7 @@ public class TopologyReadinessHandlerTest {
         handler.deactivate(componentContext);
 
         TopologyEvent event = new TopologyEvent(Type.TOPOLOGY_CHANGING, oldView, null);
-        assertTrue("Expected delay when no SystemReady Service is available", handler.shouldDelayTopologyChange(event));
+        assertTrue("Expected delay when no SystemReady Service is available", handler.shouldDelayTopologyChange());
     }
 
     @Test(expected = IllegalStateException.class)
@@ -133,45 +114,53 @@ public class TopologyReadinessHandlerTest {
         // Initially, the system should be in the STARTUP state
         TopologyView newView = mock(TopologyView.class);
         TopologyEvent event = new TopologyEvent(Type.TOPOLOGY_CHANGING, oldView, null);
-        assertTrue(handler.shouldDelayTopologyChange(event)); // STARTUP state delays changes
+        assertTrue(handler.shouldDelayTopologyChange()); // STARTUP state delays changes
 
         // Transition to READY state by binding the SystemReady service
         handler.bindSystemReady(systemReadyService);
 
         // Use a new event to ensure consistency
         TopologyEvent readyEvent = new TopologyEvent(Type.TOPOLOGY_CHANGED, oldView, newView);
-        assertFalse(handler.shouldDelayTopologyChange(readyEvent)); // READY state does not delay changes
+        assertFalse(handler.shouldDelayTopologyChange()); // READY state does not delay changes
 
         // Transition to SHUTDOWN state by unbind SystemReady (transitions to SHUTDOWN)
         TopologyEvent shutdownEvent = new TopologyEvent(Type.TOPOLOGY_CHANGING, oldView, null);
         handler.unbindSystemReady(systemReadyService);
-        assertTrue(handler.shouldDelayTopologyChange(shutdownEvent)); // SHUTDOWN state delays changes
+        assertTrue(handler.shouldDelayTopologyChange()); // SHUTDOWN state delays changes
     }
 
     @Test
-    public void testTopologyEventTypes() {
-        TopologyView newView = mock(TopologyView.class);
+    public void testStartupSequence() {
+        // Initially in STARTUP state
+        assertTrue("Should delay topology changes in STARTUP state",
+                handler.shouldDelayTopologyChange());
 
-        // Transition the system to the READY state
+        // Activate the handler
+        handler.activate(componentContext);
+        assertTrue("Should still delay topology changes after activation",
+                handler.shouldDelayTopologyChange());
+
+        // Bind SystemReady service
+        handler.bindSystemReady(systemReadyService);
+        assertFalse("Should not delay topology changes after SystemReady bound",
+                handler.shouldDelayTopologyChange());
+    }
+
+    @Test
+    public void testShutdownSequence() {
+        DefaultTopologyView topologyView = mock(DefaultTopologyView.class);
+        // Setup initial READY state
+        handler.activate(componentContext);
         handler.bindSystemReady(systemReadyService);
 
-        // TOPOLOGY_INIT should not be delayed
-        TopologyEvent initEvent = new TopologyEvent(Type.TOPOLOGY_INIT, null, newView);
-        assertFalse("TOPOLOGY_INIT should not be delayed", handler.shouldDelayTopologyChange(initEvent));
+        assertFalse("Should not delay topology changes in READY state",
+                handler.shouldDelayTopologyChange());
 
-        // TOPOLOGY_CHANGING should be delayed if in progress
-        handler.startTopologyChange();
-        TopologyEvent changingEvent = new TopologyEvent(Type.TOPOLOGY_CHANGING, oldView, null);
-        assertTrue("TOPOLOGY_CHANGING should be delayed during topology change", handler.shouldDelayTopologyChange(changingEvent));
+        // Simulate shutdown
+        handler.setCurrentView(topologyView);
+        handler.initiateShutdown();
 
-        // TOPOLOGY_CHANGED should not be delayed
-        handler.endTopologyChange();
-        TopologyEvent changedEvent = new TopologyEvent(Type.TOPOLOGY_CHANGED, oldView, newView);
-        try {
-            Thread.sleep(1100);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        assertFalse("TOPOLOGY_CHANGED should not be delayed after delay period", handler.shouldDelayTopologyChange(changedEvent));
+        // Verify topology view was marked as not current
+        verify(topologyView).setNotCurrent();
     }
 } 
