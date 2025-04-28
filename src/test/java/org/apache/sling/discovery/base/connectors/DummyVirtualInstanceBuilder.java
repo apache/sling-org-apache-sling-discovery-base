@@ -21,6 +21,8 @@ package org.apache.sling.discovery.base.connectors;
 import org.apache.sling.discovery.base.commons.BaseDiscoveryService;
 import org.apache.sling.discovery.base.commons.ClusterViewService;
 import org.apache.sling.discovery.base.commons.DummyDiscoveryService;
+import org.apache.sling.discovery.base.commons.TopologyReadinessHandler;
+import org.apache.sling.discovery.base.its.setup.DummyTopologyReadinessHandler;
 import org.apache.sling.discovery.base.commons.ViewChecker;
 import org.apache.sling.discovery.base.its.setup.ModifiableTestBaseConfig;
 import org.apache.sling.discovery.base.its.setup.VirtualInstance;
@@ -48,12 +50,12 @@ public class DummyVirtualInstanceBuilder extends VirtualInstanceBuilder {
         // nothing to do now
         return this;
     }
-    
+
     @Override
     public Object[] getAdditionalServices(VirtualInstance instance) throws Exception {
         return null;
     }
-    
+
     protected ClusterViewService createClusterViewService() {
         return new SimpleClusterViewService(getSlingId());
     }
@@ -64,6 +66,17 @@ public class DummyVirtualInstanceBuilder extends VirtualInstanceBuilder {
 
     protected BaseDiscoveryService createDiscoveryService() throws Exception {
         return new DummyDiscoveryService(getSlingId(), getClusterViewService(), getAnnouncementRegistry(), getResourceResolverFactory(), getConnectorConfig(), getConnectorRegistry(), getScheduler());
+    }
+
+    protected TopologyReadinessHandler createTopologyReadinessHandler() throws Exception {
+        return DummyTopologyReadinessHandler.testConstructor(
+                getSlingId(),
+                getClusterViewService(),
+                getAnnouncementRegistry(),
+                getResourceResolverFactory(),
+                getConnectorConfig(),
+                getConnectorRegistry(),
+                getScheduler());
     }
 
     @Override

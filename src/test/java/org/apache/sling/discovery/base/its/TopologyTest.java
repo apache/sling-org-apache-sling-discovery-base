@@ -26,6 +26,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.felix.hc.api.condition.SystemReady;
 import org.apache.sling.discovery.InstanceDescription;
 import org.apache.sling.discovery.base.connectors.DummyVirtualInstanceBuilder;
 import org.apache.sling.discovery.base.connectors.announcement.Announcement;
@@ -43,6 +44,7 @@ public class TopologyTest {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     private final List<VirtualInstance> instances = new LinkedList<VirtualInstance>();
+    private final SystemReady systemReadyService = new SystemReady() {};
     
     private VirtualInstanceBuilder newBuilder() {
         return new DummyVirtualInstanceBuilder();
@@ -52,6 +54,7 @@ public class TopologyTest {
     public void tearDown() throws Exception {
         for (Iterator<VirtualInstance> it = instances.iterator(); it.hasNext();) {
             final VirtualInstance instance = it.next();
+            instance.getReadinessHandler().bindSystemReady(systemReadyService);
             instance.stop();
         }
     }

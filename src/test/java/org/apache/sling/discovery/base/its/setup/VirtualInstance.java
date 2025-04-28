@@ -42,6 +42,7 @@ import org.apache.sling.discovery.base.commons.BaseDiscoveryService;
 import org.apache.sling.discovery.base.commons.ClusterViewService;
 import org.apache.sling.discovery.base.commons.UndefinedClusterViewException;
 import org.apache.sling.discovery.base.commons.ViewChecker;
+import org.apache.sling.discovery.base.commons.TopologyReadinessHandler;
 import org.apache.sling.discovery.base.connectors.announcement.AnnouncementRegistry;
 import org.apache.sling.discovery.base.connectors.ping.ConnectorRegistry;
 import org.apache.sling.discovery.base.connectors.ping.TopologyConnectorClientInformation;
@@ -82,6 +83,8 @@ public class VirtualInstance {
     private final AnnouncementRegistry announcementRegistry;
 
     private final ConnectorRegistry connectorRegistry;
+
+    private final TopologyReadinessHandler topologyReadinessHandler;
 
     protected final String debugName;
 
@@ -181,12 +184,14 @@ public class VirtualInstance {
         connectorRegistry = builder.getConnectorRegistry();
         viewChecker = builder.getViewChecker();
 		discoveryService = builder.getDiscoverService();
+        topologyReadinessHandler = builder.getTopologyReadinessHandler();
 
         osgiMock.addService(clusterViewService);
         osgiMock.addService(announcementRegistry);
         osgiMock.addService(connectorRegistry);
         osgiMock.addService(viewChecker);
         osgiMock.addService(discoveryService);
+        osgiMock.addService(topologyReadinessHandler);
         osgiMock.addServices(builder.getAdditionalServices(this));
 
         resourceResolver = resourceResolverFactory
@@ -237,6 +242,10 @@ public class VirtualInstance {
 
     public AnnouncementRegistry getAnnouncementRegistry() {
         return announcementRegistry;
+    }
+
+    public TopologyReadinessHandler getReadinessHandler() {
+        return topologyReadinessHandler;
     }
 
     public synchronized void startJetty() throws Throwable {

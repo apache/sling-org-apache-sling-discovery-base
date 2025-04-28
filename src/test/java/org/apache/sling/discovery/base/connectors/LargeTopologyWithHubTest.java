@@ -24,6 +24,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.apache.felix.hc.api.condition.SystemReady;
 import org.apache.sling.commons.testing.junit.Retry;
 import org.apache.sling.commons.testing.junit.RetryRule;
 import org.apache.sling.discovery.ClusterView;
@@ -51,6 +52,8 @@ public class LargeTopologyWithHubTest {
     
     @Rule
     public final RetryRule retryRule = new RetryRule();
+
+    private final SystemReady systemReadyService = new SystemReady() {};
 
     private VirtualInstanceBuilder newBuilder() {
         return new DummyVirtualInstanceBuilder();
@@ -104,6 +107,7 @@ public class LargeTopologyWithHubTest {
     public void tearDown() throws Exception {
         for (Iterator<VirtualInstance> it = instances.iterator(); it.hasNext();) {
             final VirtualInstance instance = it.next();
+            instance.getReadinessHandler().bindSystemReady(systemReadyService);
             instance.stop();
         }
     }

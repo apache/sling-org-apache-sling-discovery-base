@@ -23,6 +23,7 @@ import static org.junit.Assert.fail;
 import java.net.URL;
 import java.util.UUID;
 
+import org.apache.felix.hc.api.condition.SystemReady;
 import org.apache.sling.discovery.base.commons.ClusterViewService;
 import org.apache.sling.discovery.base.connectors.BaseConfig;
 import org.apache.sling.discovery.base.connectors.DummyVirtualInstanceBuilder;
@@ -39,6 +40,7 @@ import org.junit.Test;
 public class ConnectorRegistryImplTest {
 
     private VirtualInstance i;
+    private final SystemReady systemReadyService = new SystemReady() {};
 
     public VirtualInstanceBuilder newBuilder() {
         return new DummyVirtualInstanceBuilder();
@@ -57,6 +59,7 @@ public class ConnectorRegistryImplTest {
     @After
     public void teardown() throws Exception {
         if (i!=null) {
+            i.getReadinessHandler().bindSystemReady(systemReadyService);
             try {
                 i.stopViewChecker();
             } catch (Throwable e) {

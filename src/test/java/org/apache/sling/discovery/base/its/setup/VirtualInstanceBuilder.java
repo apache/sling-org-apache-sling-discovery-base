@@ -24,6 +24,7 @@ import org.apache.sling.api.resource.ResourceResolverFactory;
 import org.apache.sling.commons.scheduler.Scheduler;
 import org.apache.sling.discovery.base.commons.BaseDiscoveryService;
 import org.apache.sling.discovery.base.commons.ClusterViewService;
+import org.apache.sling.discovery.base.commons.TopologyReadinessHandler;
 import org.apache.sling.discovery.base.commons.ViewChecker;
 import org.apache.sling.discovery.base.connectors.announcement.AnnouncementRegistry;
 import org.apache.sling.discovery.base.connectors.announcement.AnnouncementRegistryImpl;
@@ -56,6 +57,7 @@ public abstract class VirtualInstanceBuilder {
     private ConnectorRegistry connectorRegistry;
     private Scheduler scheduler;
     private BaseDiscoveryService discoveryService;
+    private TopologyReadinessHandler topologyReadinessHandler;
     private SlingSettingsService slingSettingsService;
     protected boolean ownRepository;
     private int minEventDelay = 1;
@@ -186,7 +188,16 @@ public abstract class VirtualInstanceBuilder {
     }
 
     protected abstract BaseDiscoveryService createDiscoveryService() throws Exception;
-    
+
+    public TopologyReadinessHandler getTopologyReadinessHandler() throws Exception {
+        if (topologyReadinessHandler ==null) {
+            topologyReadinessHandler = createTopologyReadinessHandler();
+        }
+        return topologyReadinessHandler;
+    }
+
+    protected abstract TopologyReadinessHandler createTopologyReadinessHandler() throws Exception;
+
     protected SlingSettingsService getSlingSettingsService() {
         if (slingSettingsService==null) {
             slingSettingsService = createSlingSettingsService();
