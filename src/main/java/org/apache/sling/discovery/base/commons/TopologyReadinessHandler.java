@@ -128,6 +128,10 @@ public class TopologyReadinessHandler {
         return !stateMachine.isReady();
     }
 
+    public boolean isShutdown() {
+        return stateMachine.getCurrentState() == SystemState.SHUTDOWN;
+    }
+
     private final class StateMachine {
         private final AtomicReference<SystemState> currentState = new AtomicReference<>(SystemState.STARTUP);
 
