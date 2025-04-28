@@ -148,7 +148,6 @@ public class TopologyReadinessHandlerTest {
 
     @Test
     public void testShutdownSequence() {
-        DefaultTopologyView topologyView = mock(DefaultTopologyView.class);
         // Setup initial READY state
         handler.activate(componentContext);
         handler.bindSystemReady(systemReadyService);
@@ -157,10 +156,10 @@ public class TopologyReadinessHandlerTest {
                 handler.shouldDelayTopologyChange());
 
         // Simulate shutdown
-        handler.setCurrentView(topologyView);
         handler.initiateShutdown();
 
-        // Verify topology view was marked as not current
-        verify(topologyView).setNotCurrent();
+        // After shutdown, should delay topology changes
+        assertTrue("Should delay topology changes after shutdown",
+        handler.shouldDelayTopologyChange());
     }
 } 

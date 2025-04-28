@@ -88,8 +88,6 @@ public class TopologyReadinessHandler {
     @Reference(cardinality = ReferenceCardinality.MANDATORY, policy = ReferencePolicy.STATIC)
     private volatile SystemReady systemReady;
 
-    private volatile DefaultTopologyView currentView;
-
     @Activate
     protected void activate(ComponentContext context) {
         logger.info("TopologyReadinessHandler activated - in STARTUP state");
@@ -117,11 +115,6 @@ public class TopologyReadinessHandler {
     public void initiateShutdown() {
         if (stateMachine.getCurrentState() == SystemState.READY) {
             logger.info("Initiating shutdown process");
-            // Mark the current view as not current to trigger TOPOLOGY_CHANGING
-            if (currentView != null) {
-                logger.info("Marking current view as not current during shutdown");
-                currentView.setNotCurrent();
-            }
             stateMachine.transitionTo(SystemState.SHUTDOWN);
             logger.info("Shutdown completed successfully");
         }
@@ -133,14 +126,6 @@ public class TopologyReadinessHandler {
      */
     public boolean shouldDelayTopologyChange() {
         return !stateMachine.isReady();
-    }
-
-    /**
-     * Set the current topology view
-     * @param view the current topology view
-     */
-    public void setCurrentView(DefaultTopologyView view) {
-        this.currentView = view;
     }
 
     private final class StateMachine {
