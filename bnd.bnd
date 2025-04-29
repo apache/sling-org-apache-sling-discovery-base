@@ -5,3 +5,6 @@
 -fixupmessages:"Export org.apache.sling.discovery.base.connectors.announcement,  has 1,  private references [org.apache.sling.discovery.base.connectors.announcement.impl]"; \
     restrict:=warning; \
     is:=warn
+
+# Set package versions
+Export-Package: org.apache.sling.discovery.base.commons;version=2.1.0
