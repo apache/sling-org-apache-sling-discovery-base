@@ -98,11 +98,14 @@ public abstract class BaseDiscoveryService implements DiscoveryService {
         topology.addInstances(attachedInstances);
 
         // Check if topology changes should be delayed
-        if (topologyReadinessHandler != null && topologyReadinessHandler.shouldDelayTopologyChange()) {
+        if (topologyReadinessHandler != null && topologyReadinessHandler.shouldTriggerTopologyChanging()) {
             if (oldView != null) {
+                if (oldView.isCurrent()) {
+                    logger.info("getTopology: would trigger TOPOLOGY_CHANGING for current view");
+                }
                 oldView.setNotCurrent();
             }
-            logger.debug("getTopology: topology changes are delayed, returning old view");
+            logger.debug("getTopology: would trigger TOPOLOGY_CHANGING for startup or shutting down");
             return oldView;
         }
 

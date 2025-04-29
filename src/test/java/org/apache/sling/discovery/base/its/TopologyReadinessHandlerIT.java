@@ -47,43 +47,41 @@ public class TopologyReadinessHandlerIT {
     }
 
     @Test
-    public void testReadinessHandlerWithTwoInstances() throws Exception {
-        logger.info("testReadinessHandlerWithTwoInstances: start");
+    public void testReadinessHandlerStateTransitions() throws Exception {
+        logger.info("testReadinessHandlerStateTransitions: start");
 
         // Create two instances
         VirtualInstance instance1 = createInstance("instance1");
         VirtualInstance instance2 = createInstance("instance2");
 
-        // Initially, both instances should delay topology changes
+        // Initially, both instances should delay topology changes (STARTUP state)
         assertTrue("Instance1 should delay topology changes initially",
-                instance1.getReadinessHandler().shouldDelayTopologyChange());
+                instance1.getReadinessHandler().shouldTriggerTopologyChanging());
         assertTrue("Instance2 should delay topology changes initially",
-                instance2.getReadinessHandler().shouldDelayTopologyChange());
+                instance2.getReadinessHandler().shouldTriggerTopologyChanging());
 
-        // Run heartbeats to establish initial state
-        runHeartbeats(instance1, instance2);
-
-        // Bind SystemReady to instance1
+        // Bind SystemReady to instance1 - should transition to READY state
         instance1.getReadinessHandler().bindSystemReady(systemReadyService);
-        runHeartbeats(instance1, instance2);
-
-        // Instance1 should no longer delay topology changes
         assertFalse("Instance1 should not delay topology changes after SystemReady",
-                instance1.getReadinessHandler().shouldDelayTopologyChange());
+                instance1.getReadinessHandler().shouldTriggerTopologyChanging());
         assertTrue("Instance2 should still delay topology changes",
-                instance2.getReadinessHandler().shouldDelayTopologyChange());
+                instance2.getReadinessHandler().shouldTriggerTopologyChanging());
 
-        // Bind SystemReady to instance2
+        // Bind SystemReady to instance2 - should transition to READY state
         instance2.getReadinessHandler().bindSystemReady(systemReadyService);
-        runHeartbeats(instance1, instance2);
+        assertFalse("Instance2 should not delay topology changes after SystemReady",
+                instance2.getReadinessHandler().shouldTriggerTopologyChanging());
 
-        // Both instances should no longer delay topology changes
-        assertFalse("Instance1 should not delay topology changes",
-                instance1.getReadinessHandler().shouldDelayTopologyChange());
-        assertFalse("Instance2 should not delay topology changes",
-                instance2.getReadinessHandler().shouldDelayTopologyChange());
+        // Now we can safely stop instance2 since it's in READY state
+        logger.info("Stopping instance2");
+        instance2.stop();
+        instances.remove(instance2); // Remove from cleanup list
 
-        logger.info("testReadinessHandlerWithTwoInstances: end");
+        // Verify instance1 remains in READY state
+        assertFalse("Instance1 should remain in READY state after instance2 failure",
+                instance1.getReadinessHandler().shouldTriggerTopologyChanging());
+
+        logger.info("testReadinessHandlerStateTransitions: end");
     }
 
     private VirtualInstance createInstance(String debugName) throws Exception {
@@ -96,12 +94,5 @@ public class TopologyReadinessHandlerIT {
         instances.add(instance);
         instance.startViewChecker(1);
         return instance;
-    }
-
-    private void runHeartbeats(VirtualInstance... instances) throws Exception {
-        for (VirtualInstance instance : instances) {
-            instance.heartbeatsAndCheckView();
-        }
-        Thread.sleep(500);
     }
 }

@@ -23,8 +23,6 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.*;
 
 import org.apache.felix.hc.api.condition.SystemReady;
-import org.apache.sling.discovery.TopologyEvent;
-import org.apache.sling.discovery.TopologyEvent.Type;
 import org.apache.sling.discovery.TopologyView;
 import org.junit.Before;
 import org.junit.Test;
@@ -56,40 +54,10 @@ public class TopologyReadinessHandlerTest {
     }
 
     @Test
-    public void testSystemNotReady() {
-        TopologyEvent event = new TopologyEvent(Type.TOPOLOGY_CHANGING, oldView, null);
-        assertTrue(handler.shouldDelayTopologyChange());
-    }
-
-    @Test
-    public void testShutdownBehavior() {
-        handler.initiateShutdown();
-        TopologyEvent event = new TopologyEvent(Type.TOPOLOGY_CHANGING, oldView, null);
-
-        assertTrue("Shutdown in progress, delay expected", handler.shouldDelayTopologyChange());
-    }
-
-    @Test
     public void testSystemReady() {
         // Simulate the system transitioning to the READY state
         handler.bindSystemReady(systemReadyService);
-
-        TopologyEvent event = new TopologyEvent(Type.TOPOLOGY_CHANGING, oldView, null);
-
-        assertFalse("Expected no delay when the system is ready", handler.shouldDelayTopologyChange());
-    }
-
-    @Test
-    public void testTopologyChangeInProgress() {
-        TopologyEvent event = new TopologyEvent(Type.TOPOLOGY_CHANGING, oldView, null);
-        assertTrue(handler.shouldDelayTopologyChange());
-    }
-
-    @Test
-    public void testDelayPeriod() throws InterruptedException {
-        // Should still be in delay period
-        TopologyEvent event = new TopologyEvent(Type.TOPOLOGY_CHANGING, oldView, null);
-        assertTrue("Expected delay during the delay period", handler.shouldDelayTopologyChange());
+        assertFalse("Expected no delay when the system is ready", handler.shouldTriggerTopologyChanging());
     }
 
     @Test
@@ -97,53 +65,28 @@ public class TopologyReadinessHandlerTest {
         // Transition to READY state by binding the SystemReady service
         handler.bindSystemReady(systemReadyService);
         handler.deactivate(componentContext);
-
-        TopologyEvent event = new TopologyEvent(Type.TOPOLOGY_CHANGING, oldView, null);
-        assertTrue("Expected delay when no SystemReady Service is available", handler.shouldDelayTopologyChange());
+        assertTrue("Expected delay when no SystemReady Service is available", handler.shouldTriggerTopologyChanging());
     }
 
     @Test(expected = IllegalStateException.class)
     public void testInvalidTransitionFromShutdown() {
         handler.bindSystemReady(systemReadyService);
-        handler.initiateShutdown();
+        handler.deactivate(null);
         handler.bindSystemReady(systemReadyService);
     }
 
     @Test
     public void testValidTransitionSequence() {
         // Initially, the system should be in the STARTUP state
-        TopologyView newView = mock(TopologyView.class);
-        TopologyEvent event = new TopologyEvent(Type.TOPOLOGY_CHANGING, oldView, null);
-        assertTrue(handler.shouldDelayTopologyChange()); // STARTUP state delays changes
+        assertTrue(handler.shouldTriggerTopologyChanging()); // STARTUP state delays changes
 
         // Transition to READY state by binding the SystemReady service
         handler.bindSystemReady(systemReadyService);
-
-        // Use a new event to ensure consistency
-        TopologyEvent readyEvent = new TopologyEvent(Type.TOPOLOGY_CHANGED, oldView, newView);
-        assertFalse(handler.shouldDelayTopologyChange()); // READY state does not delay changes
+        assertFalse(handler.shouldTriggerTopologyChanging()); // READY state does not delay changes
 
         // Transition to SHUTDOWN state by unbind SystemReady (transitions to SHUTDOWN)
-        TopologyEvent shutdownEvent = new TopologyEvent(Type.TOPOLOGY_CHANGING, oldView, null);
         handler.unbindSystemReady(systemReadyService);
-        assertTrue(handler.shouldDelayTopologyChange()); // SHUTDOWN state delays changes
-    }
-
-    @Test
-    public void testStartupSequence() {
-        // Initially in STARTUP state
-        assertTrue("Should delay topology changes in STARTUP state",
-                handler.shouldDelayTopologyChange());
-
-        // Activate the handler
-        handler.activate(componentContext);
-        assertTrue("Should still delay topology changes after activation",
-                handler.shouldDelayTopologyChange());
-
-        // Bind SystemReady service
-        handler.bindSystemReady(systemReadyService);
-        assertFalse("Should not delay topology changes after SystemReady bound",
-                handler.shouldDelayTopologyChange());
+        assertTrue(handler.shouldTriggerTopologyChanging()); // SHUTDOWN state delays changes
     }
 
     @Test
@@ -153,13 +96,13 @@ public class TopologyReadinessHandlerTest {
         handler.bindSystemReady(systemReadyService);
 
         assertFalse("Should not delay topology changes in READY state",
-                handler.shouldDelayTopologyChange());
+                handler.shouldTriggerTopologyChanging());
 
         // Simulate shutdown
-        handler.initiateShutdown();
+        handler.deactivate(null);
 
         // After shutdown, should delay topology changes
         assertTrue("Should delay topology changes after shutdown",
-        handler.shouldDelayTopologyChange());
+                handler.shouldTriggerTopologyChanging());
     }
 } 

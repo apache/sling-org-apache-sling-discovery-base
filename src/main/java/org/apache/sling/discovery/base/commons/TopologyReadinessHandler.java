@@ -101,31 +101,23 @@ public class TopologyReadinessHandler {
     }
 
     public void bindSystemReady(SystemReady service) {
-        logger.debug("SystemReady service bound - transitioning to READY state");
+        logger.info("SystemReady service bound - transitioning to READY state");
         stateMachine.transitionTo(SystemState.READY);
     }
 
     protected void unbindSystemReady(SystemReady service) {
-        logger.debug("SystemReady service unbound - transitioning to SHUTDOWN state");
+        logger.info("SystemReady service unbound - transitioning to SHUTDOWN state");
         stateMachine.transitionTo(SystemState.SHUTDOWN);
     }
 
     /**
-     * Initiate the shutdown process
+     * Determines if a TOPOLOGY_CHANGING event should be triggered based on system state.
+     * Returns true if the system is not in READY state (i.e. during startup or shutdown),
+     * indicating that topology changes should be delayed.
+     * 
+     * @return true if system is not ready and topology changes should be delayed, false otherwise
      */
-    public void initiateShutdown() {
-        if (stateMachine.getCurrentState() == SystemState.READY) {
-            logger.info("Initiating shutdown process");
-            stateMachine.transitionTo(SystemState.SHUTDOWN);
-            logger.info("Shutdown completed successfully");
-        }
-    }
-
-    /**
-     * Check if a topology change should be delayed based on system readiness
-     * @return true if the change should be delayed, false otherwise
-     */
-    public boolean shouldDelayTopologyChange() {
+    public boolean shouldTriggerTopologyChanging() {
         return !stateMachine.isReady();
     }
 

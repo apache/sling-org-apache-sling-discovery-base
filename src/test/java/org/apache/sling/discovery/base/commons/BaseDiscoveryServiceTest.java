@@ -31,6 +31,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.slf4j.Logger;
 
 public class BaseDiscoveryServiceTest {
 
@@ -81,7 +82,7 @@ public class BaseDiscoveryServiceTest {
     public void testGetTopology_Success() throws Exception {
         when(clusterViewService.getLocalClusterView()).thenReturn(localClusterView);
         when(announcementRegistry.listInstances(localClusterView)).thenReturn(Collections.emptyList());
-        when(topologyReadinessHandler.shouldDelayTopologyChange()).thenReturn(false);
+        when(topologyReadinessHandler.shouldTriggerTopologyChanging()).thenReturn(false);
 
         TopologyView topology = discoveryService.getTopology();
 
@@ -104,7 +105,7 @@ public class BaseDiscoveryServiceTest {
     public void testGetTopology_DelayTopologyChange() throws Exception {
         when(clusterViewService.getLocalClusterView()).thenReturn(localClusterView);
         when(announcementRegistry.listInstances(localClusterView)).thenReturn(Collections.emptyList());
-        when(topologyReadinessHandler.shouldDelayTopologyChange()).thenReturn(true);
+        when(topologyReadinessHandler.shouldTriggerTopologyChanging()).thenReturn(true);
 
         // Set up oldView as current
         DefaultTopologyView oldView = new DefaultTopologyView();
@@ -114,12 +115,10 @@ public class BaseDiscoveryServiceTest {
         TopologyView topology = discoveryService.getTopology();
 
         assertNotNull(topology);
-
-        // If the returned view is still current, mark it as not current to simulate expected behavior
-        if (topology.isCurrent()) {
-            ((DefaultTopologyView) topology).setNotCurrent();
-        }
-        assertFalse("Returned view should not be current when delayed", topology.isCurrent());
+        // When topology changes are delayed, we should get back the old view
+        assertEquals(oldView, topology);
+        // The old view should be marked as not current
+        assertFalse("Old view should be marked as not current when changes are delayed", topology.isCurrent());
     }
 
     @Test

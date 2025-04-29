@@ -83,15 +83,7 @@ public class DummyTopologyReadinessHandler extends TopologyReadinessHandler {
     }
 
     @Override
-    public boolean shouldDelayTopologyChange() {
-        return super.shouldDelayTopologyChange();
-    }
-
-    @Override
-    public void initiateShutdown() {
-        logger.debug("initiateShutdown: Initiating shutdown sequence");
-        // First ensure we're in READY state before attempting shutdown
-        bindSystemReady(new SystemReady() {});
-        super.initiateShutdown(); // This transitions to SHUTDOWN state only if in READY state
+    public boolean shouldTriggerTopologyChanging() {
+        return super.shouldTriggerTopologyChanging();
     }
 }
