@@ -85,7 +85,8 @@ public class TopologyReadinessHandler {
 
     private final StateMachine stateMachine = new StateMachine();
 
-    @Reference(cardinality = ReferenceCardinality.MANDATORY, policy = ReferencePolicy.STATIC)
+    @Reference(cardinality = ReferenceCardinality.MANDATORY, policy = ReferencePolicy.STATIC,
+                target = "(tag=systemready)")
     private volatile SystemReady systemReady;
 
     @Activate
@@ -126,10 +127,6 @@ public class TopologyReadinessHandler {
      */
     public boolean shouldDelayTopologyChange() {
         return !stateMachine.isReady();
-    }
-
-    public boolean isShutdown() {
-        return stateMachine.getCurrentState() == SystemState.SHUTDOWN;
     }
 
     private final class StateMachine {

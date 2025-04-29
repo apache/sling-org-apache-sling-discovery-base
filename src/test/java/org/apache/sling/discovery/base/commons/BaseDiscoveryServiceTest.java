@@ -123,28 +123,6 @@ public class BaseDiscoveryServiceTest {
     }
 
     @Test
-    public void testGetTopology_ShutdownCondition() throws Exception {
-        // Arrange: set up mocks and the discovery service
-        when(clusterViewService.getLocalClusterView()).thenReturn(localClusterView);
-        when(announcementRegistry.listInstances(localClusterView)).thenReturn(Collections.emptyList());
-        when(topologyReadinessHandler.shouldDelayTopologyChange()).thenReturn(true);
-        // Simulate shutdown state
-        when(topologyReadinessHandler.isShutdown()).thenReturn(true);
-
-        // Set up oldView as current
-        DefaultTopologyView oldView = new DefaultTopologyView();
-        discoveryService.setOldView(oldView);
-        assertTrue("Old view should be current before shutdown", oldView.isCurrent());
-
-        // Act: call getTopology() during shutdown
-        TopologyView topology = discoveryService.getTopology();
-
-        // Assert: returned view should not be current
-        assertNotNull(topology);
-        assertFalse("Returned view should not be current during shutdown", topology.isCurrent());
-    }
-
-    @Test
     public void testSetOldView_NullView() {
         try {
             discoveryService.setOldView(null);
