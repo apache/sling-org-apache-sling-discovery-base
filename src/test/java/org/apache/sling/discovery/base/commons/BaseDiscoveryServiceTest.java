@@ -31,7 +31,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.slf4j.Logger;
 
 public class BaseDiscoveryServiceTest {
 
@@ -119,6 +118,26 @@ public class BaseDiscoveryServiceTest {
         assertEquals(oldView, topology);
         // The old view should be marked as not current
         assertFalse("Old view should be marked as not current when changes are delayed", topology.isCurrent());
+    }
+
+    @Test
+    public void testGetTopology_TriggerTopologyChangeOnlyOnce() throws Exception {
+        when(clusterViewService.getLocalClusterView()).thenReturn(localClusterView);
+        when(announcementRegistry.listInstances(localClusterView)).thenReturn(Collections.emptyList());
+        when(topologyReadinessHandler.shouldTriggerTopologyChanging()).thenReturn(true);
+
+        // Set up oldView as current
+        DefaultTopologyView oldView = new DefaultTopologyView();
+        discoveryService.setOldView(oldView);
+        assertTrue("Old view should be current before delay", oldView.isCurrent());
+
+        // First call should trigger topology change and mark oldView as not current
+        discoveryService.getTopology();
+        assertFalse("Old view should no longer be current after first call", oldView.isCurrent());
+
+        // Second call should not change the state of oldView
+        discoveryService.getTopology();
+        assertFalse("Old view should remain not current after second call", oldView.isCurrent());
     }
 
     @Test

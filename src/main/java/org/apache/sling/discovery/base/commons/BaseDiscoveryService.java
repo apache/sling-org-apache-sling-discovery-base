@@ -105,7 +105,6 @@ public abstract class BaseDiscoveryService implements DiscoveryService {
                 }
                 oldView.setNotCurrent();
             }
-            logger.debug("getTopology: would trigger TOPOLOGY_CHANGING for startup or shutting down");
             return oldView;
         }
 
