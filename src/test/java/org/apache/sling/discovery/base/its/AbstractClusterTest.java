@@ -37,7 +37,7 @@ import java.util.concurrent.Semaphore;
 import org.apache.log4j.Level;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.spi.RootLogger;
-import org.apache.sling.commons.testing.junit.categories.Slow;
+
 import org.apache.sling.discovery.ClusterView;
 import org.apache.sling.discovery.InstanceDescription;
 import org.apache.sling.discovery.TopologyEvent;
@@ -58,7 +58,6 @@ import org.apache.sling.discovery.base.its.setup.mock.PropertyProviderImpl;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -328,7 +327,6 @@ public abstract class AbstractClusterTest {
          * then simulate load balancer switching from instance1 to instance2 - hence pings go to instance2
          *
          */
-    @Category(Slow.class) //TODO: this takes env 45sec
     @Test
     public void testConnectorSwitching4139() throws Throwable {
         final int MIN_EVENT_DELAY = 1;
@@ -508,7 +506,6 @@ public abstract class AbstractClusterTest {
 
     }
 
-    @Category(Slow.class) //TODO: this takes env 25sec
     @Test
     public void testDuplicateInstance3726() throws Throwable {
         logger.info("testDuplicateInstance3726: start");
@@ -1247,7 +1244,6 @@ public abstract class AbstractClusterTest {
         logger.info("testClusterView: end");
     }
 
-    @Category(Slow.class) //TODO: this takes env 15sec
     @Test
     public void testAdditionalInstance() throws Throwable {
         logger.info("testAdditionalInstance: start");
@@ -1463,7 +1459,6 @@ public abstract class AbstractClusterTest {
      *    the second listener still gets the event
      * @throws Throwable
      */
-    @Category(Slow.class) //TODO: this takes env 15sec
     @Test
     public void testLongRunningListener() throws Throwable {
         // let the instance1 become alone, instance2 is idle

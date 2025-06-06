@@ -27,26 +27,27 @@ import static org.junit.Assert.fail;
 import java.util.List;
 import java.util.UUID;
 
-import javax.jcr.Session;
-
 import org.apache.sling.api.resource.ResourceResolverFactory;
-import org.apache.sling.commons.testing.jcr.RepositoryProvider;
-import org.apache.sling.commons.testing.junit.categories.Slow;
 import org.apache.sling.discovery.ClusterView;
 import org.apache.sling.discovery.InstanceDescription;
 import org.apache.sling.discovery.base.connectors.BaseConfig;
+
 import org.apache.sling.discovery.base.its.setup.TopologyHelper;
 import org.apache.sling.discovery.base.its.setup.VirtualInstanceHelper;
-import org.apache.sling.discovery.base.its.setup.mock.MockFactory;
 import org.apache.sling.discovery.base.its.setup.mock.SimpleConnectorConfig;
 import org.apache.sling.discovery.commons.providers.DefaultClusterView;
 import org.apache.sling.discovery.commons.providers.DefaultInstanceDescription;
 import org.apache.sling.discovery.commons.providers.spi.base.DummySlingSettingsService;
+import org.apache.sling.testing.mock.sling.ResourceResolverType;
+import org.apache.sling.testing.mock.sling.junit.SlingContext;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 
 public class AnnouncementRegistryImplTest {
+
+    @Rule
+    public final SlingContext context = new SlingContext(ResourceResolverType.JCR_MOCK);
 
     private AnnouncementRegistryImpl registry;
     private String slingId;
@@ -55,25 +56,15 @@ public class AnnouncementRegistryImplTest {
 
     @Before
     public void setup() throws Exception {
-        resourceResolverFactory = MockFactory
-                .mockResourceResolverFactory();
+        resourceResolverFactory = context.getService(ResourceResolverFactory.class);
         config = new SimpleConnectorConfig() {
+            @Override
             public long getConnectorPingTimeout() {
                 // 10s for tests that also run on apache jenkins
                 return 10;
             };
         };
         slingId = UUID.randomUUID().toString();
-        Session l = RepositoryProvider.instance().getRepository()
-                .loginAdministrative(null);
-        try {
-            l.removeItem("/var");
-            l.save();
-            l.logout();
-        } catch (Exception e) {
-            l.refresh(false);
-            l.logout();
-        }
         registry = AnnouncementRegistryImpl.testConstructorAndActivate(
                 resourceResolverFactory, new DummySlingSettingsService(slingId), config);
     }
@@ -83,7 +74,6 @@ public class AnnouncementRegistryImplTest {
     	doTestRegisterUnregister(false);
     }
     
-    @Category(Slow.class)
     @Test
     public void testRegisterUnregister_Slow() throws Exception {
     	doTestRegisterUnregister(true);
@@ -216,6 +206,7 @@ public class AnnouncementRegistryImplTest {
         assertEquals(1, ann.listInstances().size());
         registry.addAllExcept(ann, localCluster, new AnnouncementFilter() {
             
+            @Override
             public boolean accept(String receivingSlingId, Announcement announcement) {
                 assertNotNull(receivingSlingId);
                 assertNotNull(announcement);
@@ -228,6 +219,7 @@ public class AnnouncementRegistryImplTest {
         assertEquals(3, registry.listInstances(localCluster).size());
         registry.addAllExcept(ann, localCluster, new AnnouncementFilter() {
             
+            @Override
             public boolean accept(String receivingSlingId, Announcement announcement) {
                 assertNotNull(receivingSlingId);
                 assertNotNull(announcement);
@@ -331,7 +323,6 @@ public class AnnouncementRegistryImplTest {
     	doTestCluster(false);
     }
     
-    @Category(Slow.class)
     @Test
     public void testCluster_Slow() throws Exception {
     	doTestCluster(true);

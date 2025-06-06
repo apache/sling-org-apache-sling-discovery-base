@@ -34,6 +34,7 @@ import org.apache.sling.discovery.base.its.setup.mock.FailingScheduler;
 import org.apache.sling.discovery.commons.providers.base.DummyScheduler;
 import org.apache.sling.discovery.commons.providers.spi.base.DummySlingSettingsService;
 import org.apache.sling.settings.SlingSettingsService;
+import org.apache.sling.testing.mock.sling.junit.SlingContext;
 
 public abstract class VirtualInstanceBuilder {
 
@@ -61,6 +62,7 @@ public abstract class VirtualInstanceBuilder {
     private int minEventDelay = 1;
     protected VirtualInstanceBuilder hookedToBuilder;
     protected final ArtificialDelay delay = new ArtificialDelay();
+    protected SlingContext slingContext;
 
     public VirtualInstanceBuilder() {
     }
@@ -116,6 +118,15 @@ public abstract class VirtualInstanceBuilder {
         return factory;
     }
 
+    public SlingContext getSlingContext() {
+        return slingContext;
+    }
+
+    public VirtualInstanceBuilder setSlingContext(SlingContext slingContext) {
+        this.slingContext = slingContext;
+        return this;
+    }
+
     public ClusterViewService getClusterViewService() {
         if (clusterViewService==null) {
             clusterViewService = createClusterViewService();
@@ -140,7 +151,7 @@ public abstract class VirtualInstanceBuilder {
     }
     
     protected AnnouncementRegistry createAnnouncementRegistry() {
-        return AnnouncementRegistryImpl.testConstructor( 
+        return AnnouncementRegistryImpl.testConstructorAndActivate( 
                 getResourceResolverFactory(), getSlingSettingsService(), getConnectorConfig());
     }
 
@@ -198,7 +209,7 @@ public abstract class VirtualInstanceBuilder {
         return new DummySlingSettingsService(getSlingId());
     }
 
-    public abstract Object[] getAdditionalServices(VirtualInstance instance) throws Exception;
+
 
     public VirtualInstanceBuilder setMinEventDelay(int minEventDelay) {
         this.minEventDelay = minEventDelay;

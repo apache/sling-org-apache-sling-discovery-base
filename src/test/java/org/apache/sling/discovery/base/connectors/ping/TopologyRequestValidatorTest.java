@@ -34,12 +34,9 @@ import org.apache.http.client.methods.HttpPut;
 import org.apache.http.message.BasicHeader;
 import org.apache.sling.discovery.base.connectors.BaseConfig;
 import org.apache.sling.discovery.base.its.setup.mock.SimpleConnectorConfig;
-import org.hamcrest.Description;
-import org.jmock.Expectations;
-import org.jmock.Mockery;
-import org.jmock.api.Action;
-import org.jmock.api.Invocation;
-import org.jmock.integration.junit4.JUnit4Mockery;
+import static org.mockito.Mockito.*;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -47,7 +44,6 @@ import org.junit.Test;
 public class TopologyRequestValidatorTest {
     
     private TopologyRequestValidator topologyRequestValidator;
-    private Mockery context = new JUnit4Mockery();
 
 
     @Before
@@ -83,25 +79,17 @@ public class TopologyRequestValidatorTest {
         Assert.assertNotNull(method.getFirstHeader(TopologyRequestValidator.SIG_HEADER));
         Assert.assertNotNull(method.getFirstHeader(TopologyRequestValidator.SIG_HEADER).getValue());
         Assert.assertTrue(method.getFirstHeader(TopologyRequestValidator.SIG_HEADER).getValue().length() > 0);
-        final HttpServletRequest request = context.mock(HttpServletRequest.class);
-        context.checking(new Expectations() {
-            {
-                allowing(request).getHeader(with(TopologyRequestValidator.HASH_HEADER));
-                will(returnValue(method.getFirstHeader(TopologyRequestValidator.HASH_HEADER).getValue()));
-                
-                allowing(request).getHeader(with(TopologyRequestValidator.SIG_HEADER));
-                will(returnValue(method.getFirstHeader(TopologyRequestValidator.SIG_HEADER).getValue()));
-                
-                allowing(request).getHeader(with("Content-Encoding"));
-                will(returnValue(""));
-
-                allowing(request).getRequestURI();
-                will(returnValue(method.getURI().getPath()));
-                
-                allowing(request).getReader();
-                will(returnValue(new BufferedReader(new StringReader(message))));
-            }
-        });
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getHeader(TopologyRequestValidator.HASH_HEADER))
+            .thenReturn(method.getFirstHeader(TopologyRequestValidator.HASH_HEADER).getValue());
+        when(request.getHeader(TopologyRequestValidator.SIG_HEADER))
+            .thenReturn(method.getFirstHeader(TopologyRequestValidator.SIG_HEADER).getValue());
+        when(request.getHeader("Content-Encoding"))
+            .thenReturn("");
+        when(request.getRequestURI())
+            .thenReturn(method.getURI().getPath());
+        when(request.getReader())
+            .thenReturn(new BufferedReader(new StringReader(message)));
         
         Assert.assertTrue(topologyRequestValidator.isTrusted(request));
         Assert.assertEquals(clearMessage, topologyRequestValidator.decodeMessage(request));
@@ -111,65 +99,37 @@ public class TopologyRequestValidatorTest {
     
     @Test
     public void testTrustResponse() throws IOException {
-        final HttpServletRequest request = context.mock(HttpServletRequest.class);
-        context.checking(new Expectations() {
-            {
-                allowing(request).getRequestURI();
-                will(returnValue("/Test/Uri2"));
-            }
-        });
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getRequestURI()).thenReturn("/Test/Uri2");
 
-        final HttpServletResponse response = context.mock(HttpServletResponse.class);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
         final Map<Object, Object> headers = new HashMap<Object, Object>();
-        context.checking(new Expectations() {
-            {
-                allowing(response).setHeader(with(any(String.class)), with(any(String.class)));
-                will(new Action(){
-
-                    public void describeTo(Description desc) {
-                        desc.appendText("Setting header ");
-                    }
-
-                    public Object invoke(Invocation invocation) throws Throwable {
-                        headers.put(invocation.getParameter(0), invocation.getParameter(1));
-                        return null;
-                    }
-                    
-                });
+        doAnswer(new Answer<Void>() {
+            @Override
+            public Void answer(InvocationOnMock invocation) throws Throwable {
+                headers.put(invocation.getArgument(0), invocation.getArgument(1));
+                return null;
             }
-        });
+        }).when(response).setHeader(anyString(), anyString());
 
         String clearMessage =  "TestMessage2";
         final String message = topologyRequestValidator.encodeMessage(clearMessage);
         topologyRequestValidator.trustMessage(response, request, message);
         
-        final HttpEntity responseEntity = context.mock(HttpEntity.class);
-        context.checking(new Expectations() {
-        	{
-        		allowing(responseEntity).getContent();
-        		will(returnValue(new ByteArrayInputStream(message.getBytes())));
-        	}
-        });
+        final HttpEntity responseEntity = mock(HttpEntity.class);
+        when(responseEntity.getContent()).thenReturn(new ByteArrayInputStream(message.getBytes()));
         
-        final HttpResponse resp = context.mock(HttpResponse.class);
-        context.checking(new Expectations(){
-            {
-                allowing(resp).getFirstHeader(with(any(String.class)));
-                will(new Action() {
-                    public void describeTo(Description desc) {
-                        desc.appendText("Getting (first) header ");
-                    }
-
-                    public Object invoke(Invocation invocation) throws Throwable {
-                        return new BasicHeader((String)invocation.getParameter(0), (String)headers.get(invocation.getParameter(0)));
-                    }
-                    
-                });
-                
-                allowing(resp).getEntity();
-                will(returnValue(responseEntity));
-            } 
+        final HttpResponse resp = mock(HttpResponse.class);
+        when(resp.getFirstHeader(anyString())).thenAnswer(new Answer<BasicHeader>() {
+            @Override
+            public BasicHeader answer(InvocationOnMock invocation) throws Throwable {
+                String headerName = invocation.getArgument(0);
+                String headerValue = (String) headers.get(headerName);
+                return new BasicHeader(headerName, headerValue);
+            }
         });
+        when(resp.getEntity()).thenReturn(responseEntity);
+        
         topologyRequestValidator.isTrusted(resp);
         topologyRequestValidator.decodeMessage("/Test/Uri2", resp);
         

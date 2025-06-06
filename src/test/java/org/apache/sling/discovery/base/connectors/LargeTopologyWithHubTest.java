@@ -24,14 +24,15 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.apache.sling.commons.testing.junit.Retry;
-import org.apache.sling.commons.testing.junit.RetryRule;
 import org.apache.sling.discovery.ClusterView;
 import org.apache.sling.discovery.TopologyView;
 import org.apache.sling.discovery.base.its.setup.TopologyHelper;
 import org.apache.sling.discovery.base.its.setup.VirtualConnector;
 import org.apache.sling.discovery.base.its.setup.VirtualInstance;
 import org.apache.sling.discovery.base.its.setup.VirtualInstanceBuilder;
+import org.apache.sling.testing.mock.sling.ResourceResolverType;
+import org.apache.sling.testing.mock.sling.junit.SlingContext;
+import org.apache.sling.testing.tools.retry.RetryLoop;
 import org.apache.sling.testing.tools.sling.TimeoutsProvider;
 import org.junit.After;
 import org.junit.Before;
@@ -50,15 +51,15 @@ public class LargeTopologyWithHubTest {
     private static final int TEST_SIZE = 50;
     
     @Rule
-    public final RetryRule retryRule = new RetryRule();
+    public final SlingContext context = new SlingContext(ResourceResolverType.JCR_MOCK);
 
     private VirtualInstanceBuilder newBuilder() {
-        return new DummyVirtualInstanceBuilder();
+        return new DummyVirtualInstanceBuilder().setSlingContext(context);
     }
     
     @Before
     public void setup() throws Throwable {
-        instances = new LinkedList<VirtualInstance>();
+        instances = new LinkedList<>();
         final int defaultHeartbeatTimeout = 3600; // 1 hour should be enough, really
         final int heartbeatTimeout = TimeoutsProvider.getInstance().getTimeout(defaultHeartbeatTimeout);
         VirtualInstanceBuilder hubBuilder = newBuilder()
@@ -76,7 +77,7 @@ public class LargeTopologyWithHubTest {
         hub.startViewChecker(1);
         hub.dumpRepo();
         
-        slingIds = new LinkedList<String>();
+        slingIds = new LinkedList<>();
         slingIds.add(hub.getSlingId());
         logger.info("setUp: using heartbeatTimeout of "+heartbeatTimeout+"sec "
                 + "(default: "+defaultHeartbeatTimeout+")");
@@ -109,15 +110,25 @@ public class LargeTopologyWithHubTest {
     }
     
     @Test
-    @Retry(timeoutMsec=30000, intervalMsec=500)
     public void testLargeTopologyWithHub() throws Exception {
-        hub.dumpRepo();
-        final TopologyView tv = hub.getDiscoveryService().getTopology();
-        assertNotNull(tv);
-        logger.info(
-                "testLargeTopologyWithHub: checking if all connectors are registered, TopologyView has {} Instances", 
-                tv.getInstances().size());
-        TopologyHelper.assertTopologyConsistsOf(tv, slingIds.toArray(new String[slingIds.size()]));
-        logger.info("testLargeTopologyWithHub: test passed");
+        new RetryLoop(new RetryLoop.Condition() {
+            @Override
+            public String getDescription() {
+                return "Waiting for large topology with hub to stabilize";
+            }
+
+            @Override
+            public boolean isTrue() throws Exception {
+                hub.dumpRepo();
+                final TopologyView tv = hub.getDiscoveryService().getTopology();
+                assertNotNull(tv);
+                logger.info(
+                        "testLargeTopologyWithHub: checking if all connectors are registered, TopologyView has {} Instances", 
+                        tv.getInstances().size());
+                TopologyHelper.assertTopologyConsistsOf(tv, slingIds.toArray(new String[slingIds.size()]));
+                logger.info("testLargeTopologyWithHub: test passed");
+                return true;
+            }
+        }, 30 /*seconds*/, 500 /*millis*/);
     }
 }

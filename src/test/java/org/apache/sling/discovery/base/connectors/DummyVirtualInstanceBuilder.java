@@ -23,10 +23,9 @@ import org.apache.sling.discovery.base.commons.ClusterViewService;
 import org.apache.sling.discovery.base.commons.DummyDiscoveryService;
 import org.apache.sling.discovery.base.commons.ViewChecker;
 import org.apache.sling.discovery.base.its.setup.ModifiableTestBaseConfig;
-import org.apache.sling.discovery.base.its.setup.VirtualInstance;
 import org.apache.sling.discovery.base.its.setup.VirtualInstanceBuilder;
 import org.apache.sling.discovery.base.its.setup.mock.DummyViewChecker;
-import org.apache.sling.discovery.base.its.setup.mock.MockFactory;
+import org.apache.sling.api.resource.ResourceResolverFactory;
 import org.apache.sling.discovery.base.its.setup.mock.SimpleClusterViewService;
 import org.apache.sling.discovery.base.its.setup.mock.SimpleConnectorConfig;
 
@@ -39,7 +38,10 @@ public class DummyVirtualInstanceBuilder extends VirtualInstanceBuilder {
 
     @Override
     public VirtualInstanceBuilder createNewRepository() throws Exception {
-        this.factory = MockFactory.mockResourceResolverFactory();
+        if (getSlingContext() == null) {
+            throw new IllegalStateException("SlingContext is null");
+        }
+        this.factory = getSlingContext().getService(ResourceResolverFactory.class);
         return this;
     }
 
@@ -49,10 +51,7 @@ public class DummyVirtualInstanceBuilder extends VirtualInstanceBuilder {
         return this;
     }
     
-    @Override
-    public Object[] getAdditionalServices(VirtualInstance instance) throws Exception {
-        return null;
-    }
+
     
     protected ClusterViewService createClusterViewService() {
         return new SimpleClusterViewService(getSlingId());
