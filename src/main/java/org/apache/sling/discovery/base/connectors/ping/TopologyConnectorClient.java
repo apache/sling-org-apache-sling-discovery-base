@@ -26,7 +26,7 @@ import java.util.Iterator;
 import java.util.UUID;
 import java.util.zip.GZIPOutputStream;
 
-import javax.json.JsonException;
+import jakarta.json.JsonException;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.http.Header;
