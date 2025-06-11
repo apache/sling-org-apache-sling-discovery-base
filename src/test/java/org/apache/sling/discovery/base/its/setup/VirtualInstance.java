@@ -20,6 +20,10 @@ package org.apache.sling.discovery.base.its.setup;
 
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.mock;
 
 import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
@@ -32,7 +36,6 @@ import java.util.Map;
 
 import javax.servlet.Servlet;
 
-import org.apache.jackrabbit.api.JackrabbitRepository;
 import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ResourceResolverFactory;
 import org.apache.sling.discovery.InstanceDescription;
@@ -47,15 +50,12 @@ import org.apache.sling.discovery.base.connectors.ping.ConnectorRegistry;
 import org.apache.sling.discovery.base.connectors.ping.TopologyConnectorClientInformation;
 import org.apache.sling.discovery.base.connectors.ping.TopologyConnectorServlet;
 import org.apache.sling.discovery.base.its.setup.mock.ArtificialDelay;
-import org.apache.sling.discovery.base.its.setup.mock.DummyResourceResolverFactory;
+import org.apache.sling.testing.mock.sling.junit.SlingContext;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.nio.SelectChannelConnector;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
-import org.jmock.Expectations;
-import org.jmock.Mockery;
-import org.jmock.integration.junit4.JUnit4Mockery;
 import org.osgi.framework.Constants;
 import org.osgi.service.component.ComponentContext;
 import org.osgi.service.http.HttpContext;
@@ -74,8 +74,6 @@ public class VirtualInstance {
     ClusterViewService clusterViewService;
 
     private final ResourceResolverFactory resourceResolverFactory;
-
-    private final OSGiMock osgiMock;
 
     private final BaseDiscoveryService discoveryService;
 
@@ -102,6 +100,8 @@ public class VirtualInstance {
     private final VirtualInstanceBuilder builder;
 
     private final ArtificialDelay delay;
+
+    private final SlingContext slingContext;
 
     private class ViewCheckerRunner implements Runnable {
 
@@ -168,7 +168,11 @@ public class VirtualInstance {
         this.delay = builder.getDelay();
         logger.info("<init>: starting slingId="+slingId+", debugName="+debugName);
 
-        osgiMock = new OSGiMock();
+        SlingContext tempSlingContext = builder.getSlingContext();
+        if (tempSlingContext == null) {
+            throw new IllegalStateException("SlingContext is null");
+        }
+        this.slingContext = tempSlingContext;
 
         this.resourceResolverFactory = builder.getResourceResolverFactory();
 
@@ -182,12 +186,12 @@ public class VirtualInstance {
         viewChecker = builder.getViewChecker();
 		discoveryService = builder.getDiscoverService();
 
-        osgiMock.addService(clusterViewService);
-        osgiMock.addService(announcementRegistry);
-        osgiMock.addService(connectorRegistry);
-        osgiMock.addService(viewChecker);
-        osgiMock.addService(discoveryService);
-        osgiMock.addServices(builder.getAdditionalServices(this));
+        // Register services with SlingContext
+        this.slingContext.registerService(ClusterViewService.class, clusterViewService);
+        this.slingContext.registerService(AnnouncementRegistry.class, announcementRegistry);
+        this.slingContext.registerService(ConnectorRegistry.class, connectorRegistry);
+        this.slingContext.registerService(ViewChecker.class, viewChecker);
+        this.slingContext.registerService(BaseDiscoveryService.class, discoveryService);
 
         resourceResolver = resourceResolverFactory
                 .getServiceResourceResolver(null);
@@ -199,8 +203,6 @@ public class VirtualInstance {
             // Doing it before addEventListener should prevent that.
             builder.resetRepo();
         }
-
-        osgiMock.activateAll();
     }
 
     public void setDelay(String operationDescriptor, long delayMillis) {
@@ -214,7 +216,7 @@ public class VirtualInstance {
 
     public void bindPropertyProvider(PropertyProvider propertyProvider,
             String... propertyNames) throws Throwable {
-        Map<String, Object> props = new HashMap<String, Object>();
+        Map<String, Object> props = new HashMap<>();
         props.put(Constants.SERVICE_ID, (long) serviceId++);
         props.put(PropertyProvider.PROPERTY_PROPERTIES, propertyNames);
 
@@ -251,16 +253,8 @@ public class VirtualInstance {
         PrivateAccessor.setField(servlet, "clusterViewService", clusterViewService);
         PrivateAccessor.setField(servlet, "announcementRegistry", announcementRegistry);
 
-        Mockery context = new JUnit4Mockery();
-        final HttpService httpService = context.mock(HttpService.class);
-        context.checking(new Expectations() {
-            {
-                allowing(httpService).registerServlet(with(any(String.class)),
-                        with(any(Servlet.class)),
-                        with(any(Dictionary.class)),
-                        with(any(HttpContext.class)));
-            }
-        });
+        final HttpService httpService = mock(HttpService.class);
+        doNothing().when(httpService).registerServlet(anyString(), any(Servlet.class), any(Dictionary.class), any(HttpContext.class));
         PrivateAccessor.setField(servlet, "httpService", httpService);
         ComponentContext cc = null;
         PrivateAccessor.invoke(servlet, "activate", new Class[] {ComponentContext.class}, new Object[] {cc});
@@ -314,16 +308,6 @@ public class VirtualInstance {
     		viewCheckerRunner.stop();
     		logger.info("startViewChecker: stopped.");
     	}
-		logger.info("startViewChecker: activating...");
-    	try{
-    		OSGiMock.activate(viewChecker);
-    	} catch(Error er) {
-    		er.printStackTrace(System.out);
-    		throw er;
-    	} catch(RuntimeException re) {
-    		re.printStackTrace(System.out);
-    	}
-		logger.info("startViewChecker: initializing...");
     	viewCheckerRunner = new ViewCheckerRunner(intervalInSeconds);
     	Thread th = new Thread(viewCheckerRunner, "Test-ViewCheckerRunner ["+debugName+"]");
     	th.setDaemon(true);
@@ -346,15 +330,6 @@ public class VirtualInstance {
             logger.info("stopViewChecker: ["+getDebugName()+"] viewCheckerRunner stopped");
     		viewCheckerRunner = null;
     	}
-        try{
-            OSGiMock.deactivate(viewChecker);
-        } catch(Error er) {
-            er.printStackTrace(System.out);
-            throw er;
-        } catch(RuntimeException re) {
-            re.printStackTrace(System.out);
-            throw re;
-        }
     }
 
     public void dumpRepo() throws Exception {
@@ -376,7 +351,6 @@ public class VirtualInstance {
         if (resourceResolver != null) {
             resourceResolver.close();
         }
-        osgiMock.deactivateAll();
         logger.info("stop: stopped slingId="+slingId+", debugName="+debugName);
     }
 
@@ -407,20 +381,5 @@ public class VirtualInstance {
         return debugName;
     }
 
-    public void shutdownRepository() throws NoSuchFieldException {
-        final JackrabbitRepository jr = getRepository();
-        jr.shutdown();
-    }
 
-    /**
-     * Returns the JackrabbitRepository assuming there is one - otherwise complains
-     * via an IllegalStateException
-     */
-    public JackrabbitRepository getRepository() throws NoSuchFieldException {
-        if ( !(resourceResolverFactory instanceof DummyResourceResolverFactory)) {
-            throw new IllegalStateException("expected a DummyResourceResolverFactory, got a " + resourceResolverFactory);
-        }
-        final DummyResourceResolverFactory f = (DummyResourceResolverFactory) resourceResolverFactory;
-        return f.getJackrabbitRepository();
-    }
 }

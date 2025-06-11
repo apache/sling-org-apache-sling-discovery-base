@@ -33,7 +33,10 @@ import org.apache.sling.discovery.base.its.setup.TopologyHelper;
 import org.apache.sling.discovery.base.its.setup.VirtualConnector;
 import org.apache.sling.discovery.base.its.setup.VirtualInstance;
 import org.apache.sling.discovery.base.its.setup.VirtualInstanceBuilder;
+import org.apache.sling.testing.mock.sling.ResourceResolverType;
+import org.apache.sling.testing.mock.sling.junit.SlingContext;
 import org.junit.After;
+import org.junit.Rule;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,10 +45,13 @@ public class TopologyTest {
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
+    @Rule
+    public final SlingContext context = new SlingContext(ResourceResolverType.JCR_MOCK);
+
     private final List<VirtualInstance> instances = new LinkedList<VirtualInstance>();
     
     private VirtualInstanceBuilder newBuilder() {
-        return new DummyVirtualInstanceBuilder();
+        return new DummyVirtualInstanceBuilder().setSlingContext(context);
     }
     
     @After

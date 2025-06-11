@@ -23,25 +23,30 @@ import static org.junit.Assert.fail;
 import java.net.URL;
 import java.util.UUID;
 
+import org.apache.sling.api.resource.ResourceResolverFactory;
 import org.apache.sling.discovery.base.commons.ClusterViewService;
 import org.apache.sling.discovery.base.connectors.BaseConfig;
 import org.apache.sling.discovery.base.connectors.DummyVirtualInstanceBuilder;
 import org.apache.sling.discovery.base.connectors.announcement.AnnouncementRegistryImpl;
 import org.apache.sling.discovery.base.its.setup.VirtualInstance;
 import org.apache.sling.discovery.base.its.setup.VirtualInstanceBuilder;
-import org.apache.sling.discovery.base.its.setup.mock.MockFactory;
 import org.apache.sling.discovery.base.its.setup.mock.SimpleConnectorConfig;
 import org.apache.sling.discovery.commons.providers.spi.base.DummySlingSettingsService;
+import org.apache.sling.testing.mock.sling.junit.SlingContext;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 
 public class ConnectorRegistryImplTest {
 
+    @Rule
+    public final SlingContext context = new SlingContext();
+
     private VirtualInstance i;
 
     public VirtualInstanceBuilder newBuilder() {
-        return new DummyVirtualInstanceBuilder();
+        return new DummyVirtualInstanceBuilder().setSlingContext(context);
     }
     
     @Before
@@ -77,7 +82,7 @@ public class ConnectorRegistryImplTest {
             }
         };
         AnnouncementRegistryImpl announcementRegistry = AnnouncementRegistryImpl.testConstructorAndActivate(
-                MockFactory.mockResourceResolverFactory(), new DummySlingSettingsService(UUID.randomUUID().toString()), config);
+                context.getService(ResourceResolverFactory.class), new DummySlingSettingsService(UUID.randomUUID().toString()), config);
 
         ConnectorRegistry c = ConnectorRegistryImpl.testConstructor(
                 announcementRegistry, config);
