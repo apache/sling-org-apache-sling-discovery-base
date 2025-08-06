@@ -435,6 +435,8 @@ public class TopologyRequestValidator {
     private String decrypt(JsonArray jsonArray) throws IllegalBlockSizeException,
             BadPaddingException, UnsupportedEncodingException, InvalidKeyException,
             NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException, InvalidKeySpecException {
+                
+                /** change AES/CBC/PKCS5Padding to "AES/CFB/PKCS5Padding" for security concern*/
         Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
         cipher.init(Cipher.DECRYPT_MODE, getCipherKey(Base64.decodeBase64(jsonArray.get(0).toString().getBytes("UTF-8"))), new IvParameterSpec(Base64.decodeBase64(jsonArray.get(1).toString().getBytes("UTF-8"))));
         return new String(cipher.doFinal(Base64.decodeBase64(jsonArray.get(2).toString().getBytes("UTF-8"))));
