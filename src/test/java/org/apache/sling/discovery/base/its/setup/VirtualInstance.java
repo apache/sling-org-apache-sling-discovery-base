@@ -51,11 +51,12 @@ import org.apache.sling.discovery.base.connectors.ping.TopologyConnectorClientIn
 import org.apache.sling.discovery.base.connectors.ping.TopologyConnectorServlet;
 import org.apache.sling.discovery.base.its.setup.mock.ArtificialDelay;
 import org.apache.sling.testing.mock.sling.junit.SlingContext;
+import org.eclipse.jetty.ee8.servlet.ServletContextHandler;
+import org.eclipse.jetty.ee8.servlet.ServletHolder;
 import org.eclipse.jetty.server.Connector;
+import org.eclipse.jetty.server.NetworkConnector;
 import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.nio.SelectChannelConnector;
-import org.eclipse.jetty.servlet.ServletContextHandler;
-import org.eclipse.jetty.servlet.ServletHolder;
+import org.eclipse.jetty.server.ServerConnector;
 import org.osgi.framework.Constants;
 import org.osgi.service.component.ComponentContext;
 import org.osgi.service.http.HttpContext;
@@ -88,8 +89,6 @@ public class VirtualInstance {
     private int serviceId = 999;
 
     private ViewCheckerRunner viewCheckerRunner = null;
-
-    private ServletContextHandler servletContext;
 
     private Server jettyServer;
 
@@ -245,8 +244,18 @@ public class VirtualInstance {
         if (jettyServer!=null) {
             return;
         }
-        servletContext = new ServletContextHandler(ServletContextHandler.NO_SECURITY);
-        servletContext.setContextPath("/");
+
+        // 1. Create the Server instance
+        jettyServer = new Server();
+
+        // 2. Add a Connector (port 0 finds an available ephemeral port)
+        ServerConnector connector = new ServerConnector(jettyServer);
+        connector.setPort(0);
+        jettyServer.addConnector(connector);
+
+        // 3. Set up the EE8 Context
+        ServletContextHandler context = new ServletContextHandler(ServletContextHandler.NO_SECURITY);
+        context.setContextPath("/");
 
         TopologyConnectorServlet servlet = new TopologyConnectorServlet();
         PrivateAccessor.setField(servlet, "config", config);
@@ -259,15 +268,13 @@ public class VirtualInstance {
         ComponentContext cc = null;
         PrivateAccessor.invoke(servlet, "activate", new Class[] {ComponentContext.class}, new Object[] {cc});
 
-        ServletHolder holder =
-                new ServletHolder(servlet);
+        // Add a servlet for testing
+        ServletHolder holder = new ServletHolder(servlet);
+        context.addServlet(holder, "/system/console/topology/*");
 
-        servletContext.addServlet(holder, "/system/console/topology/*");
+        jettyServer.setHandler(context);
 
-        jettyServer = new Server();
-        jettyServer.setHandler(servletContext);
-        Connector connector=new SelectChannelConnector();
-        jettyServer.setConnectors(new Connector[]{connector});
+        // 4. Start the server
         jettyServer.start();
     }
 
@@ -276,7 +283,7 @@ public class VirtualInstance {
             throw new IllegalStateException("jettyServer not started");
         }
         final Connector[] connectors = jettyServer.getConnectors();
-        return connectors[0].getLocalPort();
+        return ((NetworkConnector)connectors[0]).getLocalPort();
     }
 
     public TopologyConnectorClientInformation connectTo(String url) throws MalformedURLException {

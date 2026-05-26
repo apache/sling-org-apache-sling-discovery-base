@@ -176,12 +176,19 @@
 			<version>3.0.0</version>
             <scope>provided</scope>
 		</dependency>
-	    <dependency>
-	      <groupId>org.eclipse.jetty</groupId>
-	      <artifactId>jetty-servlet</artifactId>
-	      <version>8.1.2.v20120308</version>
-	      <scope>test</scope>
-	    </dependency>
+        <!-- Jetty 12 Server Core & EE8 Servlet Support -->
+        <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-server</artifactId>
+            <version>12.0.35</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.jetty.ee8</groupId>
+            <artifactId>jetty-ee8-servlet</artifactId>
+            <version>12.0.35</version>
+            <scope>test</scope>
+        </dependency>
 		<dependency>
 			<groupId>org.apache.httpcomponents</groupId>
 			<artifactId>httpclient-osgi</artifactId>
