@@ -34,10 +34,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Semaphore;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.LogManager;
-import org.apache.log4j.spi.RootLogger;
-
 import org.apache.sling.discovery.ClusterView;
 import org.apache.sling.discovery.InstanceDescription;
 import org.apache.sling.discovery.TopologyEvent;
@@ -60,6 +56,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import ch.qos.logback.classic.Level;
 
 public abstract class AbstractClusterTest {
 
@@ -103,7 +101,7 @@ public abstract class AbstractClusterTest {
 
     @Before
     public void setup() throws Exception {
-        final org.apache.log4j.Logger discoveryLogger = RootLogger.getLogger("org.apache.sling.discovery");
+        final ch.qos.logback.classic.Logger discoveryLogger = (ch.qos.logback.classic.Logger)LoggerFactory.getLogger("org.apache.sling.discovery");
         logLevel = discoveryLogger.getLevel();
         discoveryLogger.setLevel(Level.TRACE);
         logger.debug("here we are");
@@ -140,7 +138,7 @@ public abstract class AbstractClusterTest {
         instance3 = null;
         instance4 = null;
         instance5 = null;
-        final org.apache.log4j.Logger discoveryLogger = RootLogger.getLogger("org.apache.sling.discovery");
+        final ch.qos.logback.classic.Logger discoveryLogger = (ch.qos.logback.classic.Logger)LoggerFactory.getLogger("org.apache.sling.discovery");
         discoveryLogger.setLevel(logLevel);
     }
 
@@ -332,7 +330,7 @@ public abstract class AbstractClusterTest {
         final int MIN_EVENT_DELAY = 1;
 
         tearDown(); // reset any setup that was done - we start with a different setup than the default one
-        final org.apache.log4j.Logger discoveryLogger = RootLogger.getLogger("org.apache.sling.discovery");
+        final ch.qos.logback.classic.Logger discoveryLogger = (ch.qos.logback.classic.Logger)LoggerFactory.getLogger("org.apache.sling.discovery");
         logLevel = discoveryLogger.getLevel();
         discoveryLogger.setLevel(Level.DEBUG);
 
@@ -512,7 +510,7 @@ public abstract class AbstractClusterTest {
         final int MIN_EVENT_DELAY = 1;
 
         tearDown(); // reset any setup that was done - we start with a different setup than the default one
-        final org.apache.log4j.Logger discoveryLogger = RootLogger.getLogger("org.apache.sling.discovery");
+        final ch.qos.logback.classic.Logger discoveryLogger = (ch.qos.logback.classic.Logger)LoggerFactory.getLogger("org.apache.sling.discovery");
         logLevel = discoveryLogger.getLevel();
         discoveryLogger.setLevel(Level.DEBUG);
 

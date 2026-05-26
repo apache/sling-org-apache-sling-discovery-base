@@ -29,8 +29,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.spi.RootLogger;
 import org.apache.sling.discovery.ClusterView;
 import org.apache.sling.discovery.InstanceDescription;
 import org.apache.sling.discovery.TopologyEvent;
@@ -46,6 +44,8 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import ch.qos.logback.classic.Level;
+
 public abstract class AbstractSingleInstanceTest {
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
@@ -60,7 +60,7 @@ public abstract class AbstractSingleInstanceTest {
 
     @Before
     public void setup() throws Exception {
-        final org.apache.log4j.Logger discoveryLogger = RootLogger.getLogger("org.apache.sling.discovery");
+        final ch.qos.logback.classic.Logger discoveryLogger = (ch.qos.logback.classic.Logger)LoggerFactory.getLogger("org.apache.sling.discovery");
         logLevel = discoveryLogger.getLevel();
         discoveryLogger.setLevel(Level.DEBUG);
         logger.info("setup: creating new standalone instance");
@@ -74,7 +74,7 @@ public abstract class AbstractSingleInstanceTest {
 
     @After
     public void tearDown() throws Exception {
-        final org.apache.log4j.Logger discoveryLogger = RootLogger.getLogger("org.apache.sling.discovery");
+        final ch.qos.logback.classic.Logger discoveryLogger = (ch.qos.logback.classic.Logger)LoggerFactory.getLogger("org.apache.sling.discovery");
         discoveryLogger.setLevel(logLevel);
         logger.info("tearDown: stopping standalone instance");
         if (instance!=null) {

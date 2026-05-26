@@ -22,18 +22,19 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
-import java.net.URL;
 
-import org.apache.log4j.Layout;
-import org.apache.log4j.LogManager;
-import org.apache.log4j.PatternLayout;
-import org.apache.log4j.PropertyConfigurator;
-import org.apache.log4j.WriterAppender;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.LoggerContext;
+import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.AppenderBase;
+import org.slf4j.LoggerFactory;
 
-public class WithholdingAppender extends WriterAppender {
+public class WithholdingAppender extends AppenderBase<ILoggingEvent> {
 
     private final ByteArrayOutputStream baos;
     private final Writer writer;
+    private PatternLayoutEncoder encoder;
 
     /**
      * Install the WithholdingAppender, essentially muting all logging 
@@ -42,39 +43,78 @@ public class WithholdingAppender extends WriterAppender {
      * withheld log output
      */
     public static WithholdingAppender install() {
-        LogManager.getRootLogger().removeAllAppenders();
-        final WithholdingAppender withholdingAppender = new WithholdingAppender(
-                new PatternLayout("%d{dd.MM.yyyy HH:mm:ss.SSS} *%-5p* [%t] %c{1}: %m\n"));
-        LogManager.getRootLogger().addAppender(withholdingAppender);
+        LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
+        Logger rootLogger = loggerContext.getLogger(Logger.ROOT_LOGGER_NAME);
+
+        // Remove all existing appenders
+        rootLogger.detachAndStopAllAppenders();
+
+        final WithholdingAppender withholdingAppender = new WithholdingAppender();
+
+        // Create and configure the encoder
+        PatternLayoutEncoder encoder = new PatternLayoutEncoder();
+        encoder.setPattern("%d{dd.MM.yyyy HH:mm:ss.SSS} *%-5p* [%t] %c{1}: %m%n");
+        encoder.setContext(loggerContext);
+        encoder.start();
+
+        withholdingAppender.setEncoder(encoder);
+        withholdingAppender.setContext(loggerContext);
+        withholdingAppender.start();
+
+        rootLogger.addAppender(withholdingAppender);
+        rootLogger.setLevel(ch.qos.logback.classic.Level.TRACE);
+
         return withholdingAppender;
     }
-    
+
     /**
      * Release this WithholdingAppender and optionally dump what was
      * withheld (eg in case of an exception)
      * @param dumpToSysout
      */
     public void release(boolean dumpToSysout) {
-        LogManager.resetConfiguration();
-        URL log4jPropertiesFile = getClass().getResource("/log4j.properties");
-        PropertyConfigurator.configure(log4jPropertiesFile);
+        LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
+
+        // Stop and remove this appender
+        this.stop();
+        Logger rootLogger = loggerContext.getLogger(Logger.ROOT_LOGGER_NAME);
+        rootLogger.detachAppender(this);
+
+        // Reset to default configuration
+        loggerContext.reset();
+
         if (dumpToSysout) {
             String withheldLogoutput = getBuffer();
             System.out.println(withheldLogoutput);
         }
     }
-    
-    public WithholdingAppender(Layout layout) {
-        this.layout = layout;
+
+    public WithholdingAppender() {
         this.baos = new ByteArrayOutputStream();
         this.writer = new BufferedWriter(new OutputStreamWriter(baos));
-        this.setWriter(writer);
     }
-    
+
+    public void setEncoder(PatternLayoutEncoder encoder) {
+        this.encoder = encoder;
+    }
+
+    @Override
+    protected void append(ILoggingEvent event) {
+        if (encoder == null) {
+            return;
+        }
+        try {
+            byte[] bytes = encoder.encode(event);
+            writer.write(new String(bytes));
+        } catch (IOException e) {
+            // Ignore
+        }
+    }
+
     public String getBuffer() {
-        try{
+        try {
             writer.flush();
-        } catch(IOException e) {
+        } catch (IOException e) {
             // ignore
         }
         return baos.toString();
