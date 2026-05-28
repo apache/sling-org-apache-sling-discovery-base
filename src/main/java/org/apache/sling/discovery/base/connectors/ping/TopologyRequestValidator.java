@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
-import java.security.AlgorithmParameters;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.Key;
@@ -29,7 +28,6 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.spec.InvalidKeySpecException;
-import java.security.spec.InvalidParameterSpecException;
 import java.security.spec.KeySpec;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -45,7 +43,7 @@ import javax.crypto.Mac;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
-import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 import jakarta.json.Json;
@@ -82,6 +80,16 @@ public class TopologyRequestValidator {
      * Minimum number of keys to keep in memory.
      */
     private static final int MINKEYS = 3;
+
+    /**
+     * GCM authentication tag length in bits.
+     */
+    private static final int GCM_TAG_LENGTH = 128;
+
+    /**
+     * GCM nonce length in bytes.
+     */
+    private static final int GCM_NONCE_LENGTH = 12;
 
     /**
      * true if trust information should be in request headers.
@@ -170,7 +178,7 @@ public class TopologyRequestValidator {
                 throw new IOException("Unable to Encrypt Message " + e.getMessage());
             } catch (InvalidKeySpecException e) {
                 throw new IOException("Unable to Encrypt Message " + e.getMessage());
-            } catch (InvalidParameterSpecException e) {
+            } catch (InvalidAlgorithmParameterException e) {
                 throw new IOException("Unable to Encrypt Message " + e.getMessage());
             }
 
@@ -419,9 +427,9 @@ public class TopologyRequestValidator {
     }
 
     /**
-     * Decrypt the body.
+     * Decrypt the body using AES/GCM mode with authenticated encryption.
      *
-     * @param jsonArray the encrypted payload
+     * @param jsonArray the encrypted payload (nonce, ciphertext, authTag)
      * @return the decrypted payload.
      * @throws IllegalBlockSizeException
      * @throws BadPaddingException
@@ -435,16 +443,19 @@ public class TopologyRequestValidator {
     private String decrypt(JsonArray jsonArray) throws IllegalBlockSizeException,
             BadPaddingException, UnsupportedEncodingException, InvalidKeyException,
             NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException, InvalidKeySpecException {
-        Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-        cipher.init(Cipher.DECRYPT_MODE, getCipherKey(Base64.decodeBase64(jsonArray.get(0).toString().getBytes("UTF-8"))), new IvParameterSpec(Base64.decodeBase64(jsonArray.get(1).toString().getBytes("UTF-8"))));
-        return new String(cipher.doFinal(Base64.decodeBase64(jsonArray.get(2).toString().getBytes("UTF-8"))));
+        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+        byte[] nonce = Base64.decodeBase64(jsonArray.get(0).toString().getBytes("UTF-8"));
+        byte[] ciphertext = Base64.decodeBase64(jsonArray.get(1).toString().getBytes("UTF-8"));
+        GCMParameterSpec spec = new GCMParameterSpec(GCM_TAG_LENGTH, nonce);
+        cipher.init(Cipher.DECRYPT_MODE, getCipherKey(nonce), spec);
+        return new String(cipher.doFinal(ciphertext), "UTF-8");
     }
 
     /**
-     * Encrypt a payload with the numbed key/
+     * Encrypt a payload with AES/GCM mode with authenticated encryption.
      *
      * @param payload the payload.
-     * @return an encrypted version.
+     * @return an encrypted version (nonce, ciphertext).
      * @throws IllegalBlockSizeException
      * @throws BadPaddingException
      * @throws UnsupportedEncodingException
@@ -452,20 +463,20 @@ public class TopologyRequestValidator {
      * @throws NoSuchAlgorithmException
      * @throws NoSuchPaddingException
      * @throws InvalidKeySpecException
-     * @throws InvalidParameterSpecException
+     * @throws InvalidAlgorithmParameterException
      */
     private List<String> encrypt(String payload) throws IllegalBlockSizeException,
             BadPaddingException, UnsupportedEncodingException, InvalidKeyException,
-            NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeySpecException, InvalidParameterSpecException {
-        Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-        byte[] salt = new byte[9];
-        random.nextBytes(salt);
-        cipher.init(Cipher.ENCRYPT_MODE, getCipherKey(salt));
-        AlgorithmParameters params = cipher.getParameters();
+            NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeySpecException, InvalidAlgorithmParameterException {
+        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+        byte[] nonce = new byte[GCM_NONCE_LENGTH];
+        random.nextBytes(nonce);
+        GCMParameterSpec spec = new GCMParameterSpec(GCM_TAG_LENGTH, nonce);
+        cipher.init(Cipher.ENCRYPT_MODE, getCipherKey(nonce), spec);
+        byte[] ciphertext = cipher.doFinal(payload.getBytes("UTF-8"));
         List<String> encrypted = new ArrayList<String>();
-        encrypted.add(new String(Base64.encodeBase64(salt)));
-        encrypted.add(new String(Base64.encodeBase64(params.getParameterSpec(IvParameterSpec.class).getIV())));
-        encrypted.add(new String(Base64.encodeBase64(cipher.doFinal(payload.getBytes("UTF-8")))));
+        encrypted.add(new String(Base64.encodeBase64(nonce), "UTF-8"));
+        encrypted.add(new String(Base64.encodeBase64(ciphertext), "UTF-8"));
         return encrypted;
     }
 
@@ -480,7 +491,7 @@ public class TopologyRequestValidator {
         // The NIST guidelines suggest the iteration count to be at least 10000
         // Using longer hashes (SHA-256 and higher) increases the attacker's costs
         SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
-        KeySpec spec = new PBEKeySpec(sharedKey.toCharArray(), salt, 10000, 128);
+        KeySpec spec = new PBEKeySpec(sharedKey.toCharArray(), salt, 10000, 256);
         SecretKey tmp = factory.generateSecret(spec);
         return new SecretKeySpec(tmp.getEncoded(), "AES");
     }
