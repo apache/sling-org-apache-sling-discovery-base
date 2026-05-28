@@ -51,7 +51,7 @@
                  <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <redirectTestOutputToFile>true</redirectTestOutputToFile>
-                    <argLine>-Xmx2048m</argLine>
+                    <argLine>-Xmx2048m ${jacoco.command}</argLine>
                     <excludedGroups>${sling.excluded.surefire.groups}</excludedGroups>
                 </configuration>
             </plugin>
