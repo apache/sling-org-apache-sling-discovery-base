@@ -19,7 +19,7 @@
 package org.apache.sling.discovery.base.connectors.announcement;
 
 /**
- * Filter used during announcement processing internally 
+ * Filter used during announcement processing internally
  **/
 public interface AnnouncementFilter {
 
@@ -28,5 +28,4 @@ public interface AnnouncementFilter {
      * slingId can be accepted or not.
      **/
     boolean accept(String receivingSlingId, Announcement announcement);
-
 }

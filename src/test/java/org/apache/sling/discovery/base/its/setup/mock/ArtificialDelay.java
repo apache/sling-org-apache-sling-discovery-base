@@ -25,7 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * General purpose delay object that can be passed around and 
+ * General purpose delay object that can be passed around and
  * plugged in various places identified by an 'operationDescriptor'
  * which can be used to inject delays at runtime
  * @author egli
@@ -35,23 +35,23 @@ public class ArtificialDelay {
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
-    private final Map<String,Long> operationsMap = new ConcurrentHashMap<String, Long>();
+    private final Map<String, Long> operationsMap = new ConcurrentHashMap<String, Long>();
 
     private String debugName;
-    
+
     private final Object syncObj = new Object();
-    
+
     public void setDebugName(String debugName) {
         this.debugName = debugName;
     }
 
     public void setDelay(String operationDescriptor, long delayMillis) {
         operationsMap.put(operationDescriptor, delayMillis);
-        synchronized(syncObj) {
+        synchronized (syncObj) {
             syncObj.notifyAll();
         }
     }
-    
+
     public void delay(String operationDescriptor) {
         Long delayMillis = operationsMap.get(operationDescriptor);
         if (delayMillis == null) {
@@ -60,17 +60,19 @@ public class ArtificialDelay {
         if (delayMillis <= 0) {
             return;
         }
-        logger.info("delay: delaying ["+debugName+"] '"+operationDescriptor+"' for "+delayMillis+"ms...");
+        logger.info("delay: delaying [" + debugName + "] '" + operationDescriptor + "' for " + delayMillis + "ms...");
         final long start = System.currentTimeMillis();
-        synchronized(syncObj) {
-            while(true) {
+        synchronized (syncObj) {
+            while (true) {
                 delayMillis = operationsMap.get(operationDescriptor);
                 if (delayMillis == null) {
-                    logger.info("delay: delaying ["+debugName+"]'"+operationDescriptor+"' for "+delayMillis+"ms done.");
+                    logger.info("delay: delaying [" + debugName + "]'" + operationDescriptor + "' for " + delayMillis
+                            + "ms done.");
                     return;
                 }
                 if (delayMillis <= 0) {
-                    logger.info("delay: delaying ["+debugName+"]'"+operationDescriptor+"' for "+delayMillis+"ms done.");
+                    logger.info("delay: delaying [" + debugName + "]'" + operationDescriptor + "' for " + delayMillis
+                            + "ms done.");
                     return;
                 }
                 final long end = start + delayMillis;
@@ -79,14 +81,14 @@ public class ArtificialDelay {
                     break;
                 }
                 try {
-                    logger.info("delay: delaying ["+debugName+"] '"+operationDescriptor+"' now for "+remaining+"ms...");
+                    logger.info("delay: delaying [" + debugName + "] '" + operationDescriptor + "' now for " + remaining
+                            + "ms...");
                     syncObj.wait(remaining);
                 } catch (InterruptedException e) {
-                    logger.error("delay: got interrupted: "+e, e);
+                    logger.error("delay: got interrupted: " + e, e);
                 }
             }
         }
-        logger.info("delay: delaying ["+debugName+"]'"+operationDescriptor+"' for "+delayMillis+"ms done.");
+        logger.info("delay: delaying [" + debugName + "]'" + operationDescriptor + "' for " + delayMillis + "ms done.");
     }
-
 }

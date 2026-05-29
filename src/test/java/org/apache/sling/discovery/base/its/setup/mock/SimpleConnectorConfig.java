@@ -48,7 +48,7 @@ public class SimpleConnectorConfig implements ModifiableTestBaseConfig {
     public int getSocketConnectTimeout() {
         return connectionTimeout;
     }
-    
+
     public void setConnectionTimeout(int connectionTimeout) {
         this.connectionTimeout = connectionTimeout;
     }
@@ -57,7 +57,7 @@ public class SimpleConnectorConfig implements ModifiableTestBaseConfig {
     public int getSoTimeout() {
         return soTimeout;
     }
-    
+
     public void setSoTimeout(int soTimeout) {
         this.soTimeout = soTimeout;
     }
@@ -66,21 +66,21 @@ public class SimpleConnectorConfig implements ModifiableTestBaseConfig {
     public URL[] getTopologyConnectorURLs() {
         return topologyConnectorURLs;
     }
-    
+
     public void setTopologyConnectorURLs(URL[] topologyConnectorURLs) {
         this.topologyConnectorURLs = topologyConnectorURLs;
     }
 
     @Override
     public String[] getTopologyConnectorWhitelist() {
-        if (topologyConnectorWhitelist==null) {
+        if (topologyConnectorWhitelist == null) {
             return null;
         }
         return topologyConnectorWhitelist.toArray(new String[topologyConnectorWhitelist.size()]);
     }
 
     public void addTopologyConnectorWhitelistEntry(String whitelistEntry) {
-        if (topologyConnectorWhitelist==null) {
+        if (topologyConnectorWhitelist == null) {
             topologyConnectorWhitelist = new LinkedList<String>();
         }
         topologyConnectorWhitelist.add(whitelistEntry);
@@ -90,7 +90,7 @@ public class SimpleConnectorConfig implements ModifiableTestBaseConfig {
     public String getClusterInstancesPath() {
         return clusterInstancesPath;
     }
-    
+
     public void setClusterInstancesPath(String clusterInstancesPath) {
         this.clusterInstancesPath = clusterInstancesPath;
     }
@@ -99,7 +99,7 @@ public class SimpleConnectorConfig implements ModifiableTestBaseConfig {
     public boolean isHmacEnabled() {
         return hmacEnabled;
     }
-    
+
     public void setHmacEnabled(boolean hmacEnabled) {
         this.hmacEnabled = hmacEnabled;
     }
@@ -108,7 +108,7 @@ public class SimpleConnectorConfig implements ModifiableTestBaseConfig {
     public String getSharedKey() {
         return sharedKey;
     }
-    
+
     public void setSharedKey(String sharedKey) {
         this.sharedKey = sharedKey;
     }
@@ -117,7 +117,7 @@ public class SimpleConnectorConfig implements ModifiableTestBaseConfig {
     public long getKeyInterval() {
         return keyInterval;
     }
-    
+
     public void setKeyInterval(int keyInterval) {
         this.keyInterval = keyInterval;
     }
@@ -126,7 +126,7 @@ public class SimpleConnectorConfig implements ModifiableTestBaseConfig {
     public boolean isEncryptionEnabled() {
         return encryptionEnabled;
     }
-    
+
     public void setEncryptionEnabled(boolean encryptionEnabled) {
         this.encryptionEnabled = encryptionEnabled;
     }
@@ -135,7 +135,7 @@ public class SimpleConnectorConfig implements ModifiableTestBaseConfig {
     public boolean isGzipConnectorRequestsEnabled() {
         return gzipConnectorRequestsEnabled;
     }
-    
+
     public void setGzipConnectorRequestsEnabled(boolean gzipConnectorRequestsEnabled) {
         this.gzipConnectorRequestsEnabled = gzipConnectorRequestsEnabled;
     }
@@ -144,7 +144,7 @@ public class SimpleConnectorConfig implements ModifiableTestBaseConfig {
     public boolean isAutoStopLocalLoopEnabled() {
         return autoStopLocalLoopEnabled;
     }
-    
+
     public void setAutoStopLocalLoopEnabled(boolean autoStopLocalLoopEnabled) {
         this.autoStopLocalLoopEnabled = autoStopLocalLoopEnabled;
     }
@@ -153,7 +153,7 @@ public class SimpleConnectorConfig implements ModifiableTestBaseConfig {
     public int getBackoffStandbyFactor() {
         return backoffStandbyFactor;
     }
-    
+
     public void setBackoffStandbyFactor(int backoffStandbyFactor) {
         this.backoffStandbyFactor = backoffStandbyFactor;
     }
@@ -162,7 +162,7 @@ public class SimpleConnectorConfig implements ModifiableTestBaseConfig {
     public int getBackoffStableFactor() {
         return backoffStableFactor;
     }
-    
+
     public void setBackoffStableFactor(int backoffStableFactor) {
         this.backoffStableFactor = backoffStableFactor;
     }
@@ -171,7 +171,7 @@ public class SimpleConnectorConfig implements ModifiableTestBaseConfig {
     public long getBackoffStandbyInterval() {
         return backoffStandbyInterval;
     }
-    
+
     public void setBackoffStandbyInterval(long backoffStandbyInterval) {
         this.backoffStandbyInterval = backoffStandbyInterval;
     }
@@ -180,7 +180,7 @@ public class SimpleConnectorConfig implements ModifiableTestBaseConfig {
     public long getConnectorPingInterval() {
         return announcementInterval;
     }
-    
+
     public void setAnnouncementInterval(long announcementInterval) {
         this.announcementInterval = announcementInterval;
     }
@@ -189,7 +189,7 @@ public class SimpleConnectorConfig implements ModifiableTestBaseConfig {
     public long getConnectorPingTimeout() {
         return announcementTimeout;
     }
-    
+
     public void setAnnouncementTimeout(long announcementTimeout) {
         this.announcementTimeout = announcementTimeout;
     }
@@ -198,7 +198,7 @@ public class SimpleConnectorConfig implements ModifiableTestBaseConfig {
     public int getMinEventDelay() {
         return minEventDelay;
     }
-    
+
     public void setMinEventDelay(int minEventDelay) {
         this.minEventDelay = minEventDelay;
     }

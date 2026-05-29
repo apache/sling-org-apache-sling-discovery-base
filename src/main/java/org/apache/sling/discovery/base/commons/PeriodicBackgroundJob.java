@@ -29,13 +29,13 @@ import org.slf4j.LoggerFactory;
  */
 public class PeriodicBackgroundJob implements Runnable {
 
-    private final static Logger logger = LoggerFactory.getLogger(PeriodicBackgroundJob.class);
+    private static final Logger logger = LoggerFactory.getLogger(PeriodicBackgroundJob.class);
 
     private final long intervalSeconds;
     private final Runnable runnable;
 
     private final String threadName;
-    
+
     private volatile boolean stopping = false;
     private volatile boolean stopped = false;
 
@@ -47,28 +47,28 @@ public class PeriodicBackgroundJob implements Runnable {
         th.setDaemon(true);
         th.start();
     }
-    
+
     public void stop() {
         stopping = true;
     }
-    
+
     public boolean isStopping() {
         return stopping;
     }
-    
+
     public boolean isStopped() {
         return stopped;
     }
 
     @Override
     public void run() {
-        try{
-            while(!stopping) {
+        try {
+            while (!stopping) {
                 // first sleep
                 try {
                     Thread.sleep(intervalSeconds * 1000);
                 } catch (InterruptedException e) {
-                    logger.info("run: got interrupted: "+e, e);
+                    logger.info("run: got interrupted: " + e, e);
                 }
                 if (stopping) {
                     break;
@@ -82,18 +82,18 @@ public class PeriodicBackgroundJob implements Runnable {
     }
 
     private void safelyRun(Runnable r) {
-        try{
+        try {
             r.run();
-        } catch(RuntimeException re) {
+        } catch (RuntimeException re) {
             // for RuntimeExceptions it's ok to catch them
             // so do so, log and continue
-            logger.error("safelyRun: got a RuntimeException executing '"+threadName+"': "+re, re);
-        } catch(Error er) {
+            logger.error("safelyRun: got a RuntimeException executing '" + threadName + "': " + re, re);
+        } catch (Error er) {
             // for Errors it is not ok to catch them,
             // so log, but re-throw
-            logger.error("safelyRun: got an Error executing '"+threadName+"'. BackgroundJob will terminate! "+er, er);
+            logger.error(
+                    "safelyRun: got an Error executing '" + threadName + "'. BackgroundJob will terminate! " + er, er);
             throw er;
         }
     }
-    
 }

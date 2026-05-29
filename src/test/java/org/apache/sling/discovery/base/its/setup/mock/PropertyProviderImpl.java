@@ -39,7 +39,7 @@ public class PropertyProviderImpl implements PropertyProvider {
 
     public String getProperty(String name) {
         getCnt++;
-        logger.warn("getProperty: name="+name+", new getCnt="+getCnt, new Exception("getProperty-stacktrace"));
+        logger.warn("getProperty: name=" + name + ", new getCnt=" + getCnt, new Exception("getProperty-stacktrace"));
         return properties.get(name);
     }
 
@@ -54,5 +54,4 @@ public class PropertyProviderImpl implements PropertyProvider {
     public int getGetCnt() {
         return getCnt;
     }
-
 }

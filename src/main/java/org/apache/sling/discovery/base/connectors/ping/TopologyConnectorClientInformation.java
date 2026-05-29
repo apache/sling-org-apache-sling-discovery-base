@@ -33,16 +33,16 @@ public interface TopologyConnectorClientInformation {
 
     /** SLING-3316 : whether or not this connector was auto-stopped **/
     boolean isAutoStopped();
-    
+
     /** whether or not this connector was able to successfully connect **/
     boolean isConnected();
-    
+
     /** provides more details about connection failures **/
     String getStatusDetails();
 
     /** whether or not the counterpart of this connector has detected a loop in the topology connectors **/
     boolean representsLoop();
-    
+
     /** the sling id of the remote end **/
     String getRemoteSlingId();
 

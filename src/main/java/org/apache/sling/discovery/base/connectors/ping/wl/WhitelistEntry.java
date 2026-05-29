@@ -31,5 +31,4 @@ public interface WhitelistEntry {
      * @return true if the request is accepted by this WhitelistEntry
      */
     public boolean accepts(ServletRequest request);
-    
 }

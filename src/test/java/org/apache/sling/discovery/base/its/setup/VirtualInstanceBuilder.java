@@ -39,7 +39,7 @@ import org.apache.sling.testing.mock.sling.junit.SlingContext;
 public abstract class VirtualInstanceBuilder {
 
     private static Scheduler singletonScheduler = null;
-    
+
     public static Scheduler getSingletonScheduler() throws Exception {
         if (singletonScheduler == null) {
             singletonScheduler = new DummyScheduler();
@@ -64,13 +64,12 @@ public abstract class VirtualInstanceBuilder {
     protected final ArtificialDelay delay = new ArtificialDelay();
     protected SlingContext slingContext;
 
-    public VirtualInstanceBuilder() {
-    }
-    
+    public VirtualInstanceBuilder() {}
+
     public ArtificialDelay getDelay() {
         return delay;
     }
-    
+
     public VirtualInstanceBuilder newRepository(String path, boolean resetRepo) throws Exception {
         createNewRepository();
         ownRepository = true;
@@ -78,13 +77,13 @@ public abstract class VirtualInstanceBuilder {
         setPath(path);
         return this;
     }
-    
+
     public abstract VirtualInstanceBuilder createNewRepository() throws Exception;
-    
+
     public VirtualInstanceBuilder useRepositoryOf(VirtualInstance other) throws Exception {
         return useRepositoryOf(other.getBuilder());
     }
-    
+
     public VirtualInstanceBuilder useRepositoryOf(VirtualInstanceBuilder other) throws Exception {
         factory = other.factory;
         hookedToBuilder = other;
@@ -96,7 +95,7 @@ public abstract class VirtualInstanceBuilder {
         getConnectorConfig().setViewCheckTimeout(connectorPingTimeout);
         return this;
     }
-    
+
     public VirtualInstanceBuilder setConnectorPingInterval(int connectorPingInterval) {
         getConnectorConfig().setViewCheckInterval(connectorPingInterval);
         return this;
@@ -128,40 +127,40 @@ public abstract class VirtualInstanceBuilder {
     }
 
     public ClusterViewService getClusterViewService() {
-        if (clusterViewService==null) {
+        if (clusterViewService == null) {
             clusterViewService = createClusterViewService();
         }
         return clusterViewService;
     }
-    
+
     protected abstract ClusterViewService createClusterViewService();
 
     public ViewChecker getViewChecker() throws Exception {
-        if (viewChecker==null) {
+        if (viewChecker == null) {
             viewChecker = createViewChecker();
         }
         return viewChecker;
     }
-    
+
     public AnnouncementRegistry getAnnouncementRegistry() {
-        if (announcementRegistry==null) {
+        if (announcementRegistry == null) {
             announcementRegistry = createAnnouncementRegistry();
         }
         return announcementRegistry;
     }
-    
+
     protected AnnouncementRegistry createAnnouncementRegistry() {
-        return AnnouncementRegistryImpl.testConstructorAndActivate( 
+        return AnnouncementRegistryImpl.testConstructorAndActivate(
                 getResourceResolverFactory(), getSlingSettingsService(), getConnectorConfig());
     }
 
     public ConnectorRegistry getConnectorRegistry() {
-        if (connectorRegistry==null) {
+        if (connectorRegistry == null) {
             connectorRegistry = createConnectorRegistry();
         }
         return connectorRegistry;
     }
-    
+
     protected ConnectorRegistry createConnectorRegistry() {
         return ConnectorRegistryImpl.testConstructor(announcementRegistry, getConnectorConfig());
     }
@@ -181,7 +180,7 @@ public abstract class VirtualInstanceBuilder {
     public void setScheduler(Scheduler singletonScheduler) {
         this.scheduler = singletonScheduler;
     }
-    
+
     public Scheduler getScheduler() throws Exception {
         if (scheduler == null) {
             scheduler = getSingletonScheduler();
@@ -190,16 +189,16 @@ public abstract class VirtualInstanceBuilder {
     }
 
     public BaseDiscoveryService getDiscoverService() throws Exception {
-        if (discoveryService==null) {
+        if (discoveryService == null) {
             discoveryService = createDiscoveryService();
         }
         return discoveryService;
     }
 
     protected abstract BaseDiscoveryService createDiscoveryService() throws Exception;
-    
+
     protected SlingSettingsService getSlingSettingsService() {
-        if (slingSettingsService==null) {
+        if (slingSettingsService == null) {
             slingSettingsService = createSlingSettingsService();
         }
         return slingSettingsService;
@@ -208,8 +207,6 @@ public abstract class VirtualInstanceBuilder {
     protected SlingSettingsService createSlingSettingsService() {
         return new DummySlingSettingsService(getSlingId());
     }
-
-
 
     public VirtualInstanceBuilder setMinEventDelay(int minEventDelay) {
         this.minEventDelay = minEventDelay;
@@ -228,7 +225,7 @@ public abstract class VirtualInstanceBuilder {
         this.slingId = slingId;
         return this;
     }
-    
+
     public VirtualInstanceBuilder withFailingScheduler(boolean useFailingScheduler) {
         if (useFailingScheduler) {
             this.scheduler = new FailingScheduler();
@@ -237,5 +234,4 @@ public abstract class VirtualInstanceBuilder {
     }
 
     protected abstract void resetRepo() throws Exception;
-
 }

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="ISO-8859-1"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <!--
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -23,7 +23,7 @@
     <parent>
         <groupId>org.apache.sling</groupId>
         <artifactId>sling-bundle-parent</artifactId>
-        <version>48</version>
+        <version>66</version>
         <relativePath />
     </parent>
 
@@ -36,44 +36,15 @@
     <scm>
         <connection>scm:git:https://gitbox.apache.org/repos/asf/sling-org-apache-sling-discovery-base.git</connection>
         <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/sling-org-apache-sling-discovery-base.git</developerConnection>
-        <url>https://github.com/apache/sling-org-apache-sling-discovery-base.git</url>
         <tag>HEAD</tag>
+        <url>https://github.com/apache/sling-org-apache-sling-discovery-base.git</url>
     </scm>
 
     <properties>
-        <jackrabbit.version>2.14.3</jackrabbit.version>
+        <sling.java.version>17</sling.java.version>
         <surefire.maxmem>-Xmx2048m</surefire.maxmem>
         <surefire.argline>${surefire.maxmem}</surefire.argline>
     </properties>
-
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                 <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                    <redirectTestOutputToFile>true</redirectTestOutputToFile>
-                    <argLine>${surefire.argline}</argLine>
-                    <excludedGroups>${sling.excluded.surefire.groups}</excludedGroups>
-                </configuration>
-            </plugin>
-			<!-- discovery.base exports a few test classes for reuse.
-                 In order for others to use these, the test-jar must be built/installed too.
-                 Note that 'mvn -Dmaven.test.skip=true' does NOT build the test-jar,
-                 however 'mvn -DskipTests' does. -->
-             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>test-jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-    </build>
 
     <dependencies>
         <dependency>
@@ -85,7 +56,7 @@
         <!-- OSGi Dependencies -->
         <dependency>
             <groupId>org.osgi</groupId>
-            <artifactId>osgi.core</artifactId>
+            <artifactId>org.osgi.framework</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -95,70 +66,78 @@
         </dependency>
         <dependency>
             <groupId>org.osgi</groupId>
+            <artifactId>org.osgi.service.component</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.osgi</groupId>
+            <artifactId>org.osgi.service.component.annotations</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.osgi</groupId>
             <artifactId>org.osgi.service.http</artifactId>
-            <version>1.2.2</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>jakarta.json</groupId>
             <artifactId>jakarta.json-api</artifactId>
-            <version>2.0.2</version>
             <scope>provided</scope>
         </dependency>
-		<dependency>
-			<groupId>org.apache.sling</groupId>
-			<artifactId>org.apache.sling.jcr.api</artifactId>
-			<version>2.2.0</version>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>javax.jcr</groupId>
-			<artifactId>jcr</artifactId>
+        <dependency>
+            <groupId>org.apache.sling</groupId>
+            <artifactId>org.apache.sling.jcr.api</artifactId>
+            <version>2.2.0</version>
             <scope>provided</scope>
-		</dependency>
+        </dependency>
+        <dependency>
+            <groupId>javax.jcr</groupId>
+            <artifactId>jcr</artifactId>
+            <scope>provided</scope>
+        </dependency>
         <dependency>
             <groupId>javax.servlet</groupId>
             <artifactId>javax.servlet-api</artifactId>
             <scope>provided</scope>
         </dependency>
-		<dependency>
-			<groupId>org.apache.jackrabbit</groupId>
-			<artifactId>jackrabbit-api</artifactId>
-			<version>${jackrabbit.version}</version>
-			<scope>provided</scope>
-		</dependency>
+        <dependency>
+            <groupId>org.apache.jackrabbit</groupId>
+            <artifactId>oak-jackrabbit-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
         <dependency>
             <groupId>org.apache.jackrabbit</groupId>
             <artifactId>jackrabbit-spi-commons</artifactId>
             <version>${jackrabbit.version}</version>
             <scope>provided</scope>
         </dependency>
-		<dependency>
-			<groupId>org.apache.sling</groupId>
-			<artifactId>org.apache.sling.settings</artifactId>
-			<version>1.2.2</version>
+        <dependency>
+            <groupId>org.apache.sling</groupId>
+            <artifactId>org.apache.sling.settings</artifactId>
+            <version>1.2.2</version>
             <scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.sling</groupId>
-			<artifactId>org.apache.sling.discovery.api</artifactId>
-			<version>1.0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.sling</groupId>
+            <artifactId>org.apache.sling.discovery.api</artifactId>
+            <version>1.0.0</version>
             <scope>provided</scope>
-		</dependency>
- 		<dependency>
-			<groupId>org.apache.sling</groupId>
-			<artifactId>org.apache.sling.discovery.commons</artifactId>
-			<version>1.1.0</version>
-  		</dependency>
-        <!-- besides including discovery.commons' normal jar above, 
-              for testing a few test helper classes are also reused.
-              in order to achieve that, also adding a test/test-jar dependency: --> 
+        </dependency>
         <dependency>
             <groupId>org.apache.sling</groupId>
             <artifactId>org.apache.sling.discovery.commons</artifactId>
             <version>1.1.0</version>
-            <scope>test</scope>
+            <scope>provided</scope>
+        </dependency>
+        <!-- besides including discovery.commons' normal jar above, 
+              for testing a few test helper classes are also reused.
+              in order to achieve that, also adding a test/test-jar dependency: -->
+        <dependency>
+            <groupId>org.apache.sling</groupId>
+            <artifactId>org.apache.sling.discovery.commons</artifactId>
+            <version>1.1.0</version>
             <type>test-jar</type>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.sling</groupId>
@@ -172,12 +151,12 @@
             <version>2.5.0</version>
             <scope>provided</scope>
         </dependency>
-		<dependency>
-			<groupId>org.apache.felix</groupId>
-			<artifactId>org.apache.felix.webconsole</artifactId>
-			<version>3.0.0</version>
+        <dependency>
+            <groupId>org.apache.felix</groupId>
+            <artifactId>org.apache.felix.webconsole</artifactId>
+            <version>4.9.10</version>
             <scope>provided</scope>
-		</dependency>
+        </dependency>
         <!-- Jetty 12 Server Core & EE8 Servlet Support -->
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
@@ -191,12 +170,12 @@
             <version>12.0.35</version>
             <scope>test</scope>
         </dependency>
-		<dependency>
-			<groupId>org.apache.httpcomponents</groupId>
-			<artifactId>httpclient-osgi</artifactId>
-			<version>4.3.5</version>
-			<scope>provided</scope>
-		</dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient-osgi</artifactId>
+            <version>4.3.5</version>
+            <scope>provided</scope>
+        </dependency>
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
@@ -210,7 +189,7 @@
             <scope>provided</scope>
         </dependency>
 
-      <!-- Testing -->
+        <!-- Testing -->
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
@@ -235,36 +214,34 @@
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
-            <version>4.4.0</version>
             <scope>test</scope>
         </dependency>
-        
+
         <!-- Sling Mock Dependencies -->
         <dependency>
             <groupId>org.apache.sling</groupId>
             <artifactId>org.apache.sling.testing.sling-mock.junit4</artifactId>
-            <version>3.5.4</version>
+            <version>3.6.2</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.sling</groupId>
             <artifactId>org.apache.sling.testing.jcr-mock</artifactId>
-            <version>1.6.8</version>
+            <version>1.8.2</version>
             <scope>test</scope>
         </dependency>
-        
+
         <dependency>
-        	<groupId>org.apache.jackrabbit</groupId>
-        	<artifactId>jackrabbit-jcr-commons</artifactId>
-        	<version>${jackrabbit.version}</version>
-        	<scope>test</scope>
+            <groupId>org.apache.jackrabbit</groupId>
+            <artifactId>jackrabbit-jcr-commons</artifactId>
+            <scope>test</scope>
         </dependency>
-        
+
         <!-- using logback under slf4j to allow fine-grained logging config (see src/test/resources/logback-test.xml) -->
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
-            <version>1.2.13</version>
+            <version>1.5.33</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -274,10 +251,10 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-        	<groupId>org.apache.sling</groupId>
-        	<artifactId>org.apache.sling.commons.threads</artifactId>
-        	<version>3.1.0</version>
-        	<scope>test</scope>
+            <groupId>org.apache.sling</groupId>
+            <artifactId>org.apache.sling.commons.threads</artifactId>
+            <version>3.1.0</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.sling</groupId>
@@ -285,14 +262,49 @@
             <version>1.0.2</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.eclipse.parsson</groupId>
+            <artifactId>parsson</artifactId>
+            <version>1.1.9</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <redirectTestOutputToFile>true</redirectTestOutputToFile>
+                    <argLine>${surefire.argline}</argLine>
+                    <excludedGroups>${sling.excluded.surefire.groups}</excludedGroups>
+                </configuration>
+            </plugin>
+            <!-- discovery.base exports a few test classes for reuse.
+                 In order for others to use these, the test-jar must be built/installed too.
+                 Note that 'mvn -Dmaven.test.skip=true' does NOT build the test-jar,
+                 however 'mvn -DskipTests' does. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>test-jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 
     <profiles>
         <!-- override to pass the extra jacoco arguments to surefire-->
         <profile>
             <id>jacoco-report</id>
             <properties>
-                <surefire.argline>${surefire.maxmem} ${jacoco.command}</surefire.argline>
+                <surefire.argline>${surefire.maxmem} ${jacoco.ut.command}</surefire.argline>
             </properties>
         </profile>
     </profiles>

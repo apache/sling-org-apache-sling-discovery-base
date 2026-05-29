@@ -20,11 +20,11 @@ package org.apache.sling.discovery.base.commons;
 
 /**
  * This exception is thrown when the ClusterViewService
- * does not have a cluster view that is valid. 
+ * does not have a cluster view that is valid.
  * That can either be because it cannot access the repository
  * (login or other repository exception) or that there is
- * no established view yet at all (not yet voted case) - 
- * or that there is an established view but it doesn't include 
+ * no established view yet at all (not yet voted case) -
+ * or that there is an established view but it doesn't include
  * the local instance (isolated case)
  */
 @SuppressWarnings("serial")
@@ -36,18 +36,18 @@ public class UndefinedClusterViewException extends Exception {
          * the local instance)
          */
         ISOLATED_FROM_TOPOLOGY,
-        
+
         /** used when there is no established view yet
          * (happens on a fresh installation)
          */
         NO_ESTABLISHED_VIEW,
-        
+
         /** used when we couldn't reach the repository **/
         REPOSITORY_EXCEPTION
     }
 
     private final Reason reason;
-    
+
     public UndefinedClusterViewException(Reason reason) {
         super();
         this.reason = reason;
@@ -57,7 +57,7 @@ public class UndefinedClusterViewException extends Exception {
         super(msg);
         this.reason = reason;
     }
-    
+
     public Reason getReason() {
         return reason;
     }

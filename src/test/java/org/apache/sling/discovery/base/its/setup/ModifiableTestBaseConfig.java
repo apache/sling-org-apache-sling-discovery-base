@@ -33,5 +33,4 @@ public interface ModifiableTestBaseConfig extends BaseConfig {
     void setViewCheckTimeout(int viewCheckTimeout);
 
     void setViewCheckInterval(int viewCheckInterval);
-
 }

@@ -33,17 +33,17 @@ public class ClusterViewHelper {
         InstanceDescription found = null;
         for (InstanceDescription i : clusterView.getInstances()) {
             if (i.getSlingId().equals(slingId)) {
-                if (found!=null) {
-                    throw new IllegalStateException("multiple instances with slingId found: "+slingId);
+                if (found != null) {
+                    throw new IllegalStateException("multiple instances with slingId found: " + slingId);
                 }
                 found = i;
             }
         }
-        return found!=null;
+        return found != null;
     }
 
     /** checks whether the cluster contains any of the provided instances **/
-    public static boolean containsAny(ClusterView clusterView, Collection<InstanceDescription> listInstances) 
+    public static boolean containsAny(ClusterView clusterView, Collection<InstanceDescription> listInstances)
             throws UndefinedClusterViewException {
         for (InstanceDescription i : listInstances) {
             if (contains(clusterView, i.getSlingId())) {

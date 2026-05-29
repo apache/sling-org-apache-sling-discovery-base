@@ -26,63 +26,62 @@ import org.slf4j.LoggerFactory;
  * With SLING-3389 the Announcement itself doesn't use the created
  * (ie timeout) field anymore (it still has it currently for backwards
  * compatibility on the wire-level) - hence that's why there's this
- * small in-memory wrapper object which contains an Announcement and 
+ * small in-memory wrapper object which contains an Announcement and
  * carries a lastHeartbeat property.
  */
 public class CachedAnnouncement {
-    
-    private final static Logger logger = LoggerFactory.getLogger(CachedAnnouncement.class);
+
+    private static final Logger logger = LoggerFactory.getLogger(CachedAnnouncement.class);
 
     private long lastPing = System.currentTimeMillis();
 
     private final Announcement announcement;
-    
+
     private long firstPing = System.currentTimeMillis();
 
     private long backoffIntervalSeconds = -1;
 
     private final BaseConfig config;
-    
+
     CachedAnnouncement(final Announcement announcement, final BaseConfig config) {
         this.announcement = announcement;
         this.config = config;
     }
-    
+
     private long getConfiguredConnectorTimeout() {
         return config.getConnectorPingTimeout();
     }
-    
+
     private long getConfiguredConnectorInterval() {
         return config.getConnectorPingInterval();
     }
 
     public final boolean hasExpired() {
         final long now = System.currentTimeMillis();
-        final long diff = now-lastPing;
-        if (diff<1000*getEffectiveHeartbeatTimeout()) {
+        final long diff = now - lastPing;
+        if (diff < 1000 * getEffectiveHeartbeatTimeout()) {
             return false;
         } else {
             return true;
         }
     }
-    
+
     public final long getLastPing() {
         return lastPing;
     }
-    
+
     public final long getFirstPing() {
         return firstPing;
     }
-    
+
     /** Returns the second until the next heartbeat is expected, otherwise the timeout will hit **/
     public final long getSecondsUntilTimeout() {
         final long now = System.currentTimeMillis();
-        final long diff = now-lastPing;
-        final long left = 1000*getEffectiveHeartbeatTimeout() - diff;
-        return left/1000;
+        final long diff = now - lastPing;
+        final long left = 1000 * getEffectiveHeartbeatTimeout() - diff;
+        return left / 1000;
     }
-    
-    
+
     private final long getEffectiveHeartbeatTimeout() {
         final long configuredGoodwill = getConfiguredConnectorTimeout() - getConfiguredConnectorInterval();
         return Math.max(getConfiguredConnectorTimeout(), backoffIntervalSeconds + configuredGoodwill);
@@ -90,7 +89,7 @@ public class CachedAnnouncement {
 
     /** Registers a heartbeat event, and returns the new resulting backoff interval -
      * or 0 if no backoff is applicable yet.
-     * @param incomingAnnouncement 
+     * @param incomingAnnouncement
      * @return the new resulting backoff interval -
      * or 0 if no backoff is applicable yet.
      */
@@ -107,7 +106,7 @@ public class CachedAnnouncement {
             return 0;
         }
         if (incomingAnnouncement.getResetBackoff()) {
-            // on resetBackoff we reset the firstHeartbeat and start 
+            // on resetBackoff we reset the firstHeartbeat and start
             // from 0 again
             firstPing = lastPing;
             logger.debug("registerPing: got a resetBackoff - hence returning 0");
@@ -123,5 +122,4 @@ public class CachedAnnouncement {
     public final Announcement getAnnouncement() {
         return announcement;
     }
-
 }

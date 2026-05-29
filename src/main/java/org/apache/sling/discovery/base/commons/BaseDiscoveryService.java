@@ -30,35 +30,35 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Abstract base class for DiscoveryService implementations which uses the 
+ * Abstract base class for DiscoveryService implementations which uses the
  * ClusterViewService plus Topology Connectors to calculate
  * the current TopologyView
  */
 public abstract class BaseDiscoveryService implements DiscoveryService {
 
-    private final static Logger logger = LoggerFactory.getLogger(BaseDiscoveryService.class);
+    private static final Logger logger = LoggerFactory.getLogger(BaseDiscoveryService.class);
 
     /** the old view previously valid and sent to the TopologyEventListeners **/
     private DefaultTopologyView oldView;
 
     protected abstract ClusterViewService getClusterViewService();
-    
+
     protected abstract AnnouncementRegistry getAnnouncementRegistry();
-    
+
     protected abstract void handleIsolatedFromTopology();
-    
+
     protected DefaultTopologyView getOldView() {
         return oldView;
     }
-    
+
     protected void setOldView(DefaultTopologyView view) {
-        if (view==null) {
+        if (view == null) {
             throw new IllegalArgumentException("view must not be null");
         }
         logger.debug("setOldView: oldView is now: {}", oldView);
         oldView = view;
     }
-    
+
     /**
      * @see DiscoveryService#getTopology()
      */
@@ -71,8 +71,7 @@ public abstract class BaseDiscoveryService implements DiscoveryService {
             ClusterViewService clusterViewService = getClusterViewService();
             if (clusterViewService == null) {
                 throw new UndefinedClusterViewException(
-                        Reason.REPOSITORY_EXCEPTION,
-                        "no ClusterViewService available at the moment");
+                        Reason.REPOSITORY_EXCEPTION, "no ClusterViewService available at the moment");
             }
             localClusterView = clusterViewService.getLocalClusterView();
             topology.setLocalClusterView(localClusterView);
@@ -81,19 +80,18 @@ public abstract class BaseDiscoveryService implements DiscoveryService {
             // treat it as being cut off from the entire topology, ie we don't
             // update the announcements but just return
             // the previous oldView marked as !current
-            logger.info("getTopology: undefined cluster view: "+e.getReason()+"] "+e);
+            logger.info("getTopology: undefined cluster view: " + e.getReason() + "] " + e);
             oldView.setNotCurrent();
-            if (e.getReason()==Reason.ISOLATED_FROM_TOPOLOGY) {
+            if (e.getReason() == Reason.ISOLATED_FROM_TOPOLOGY) {
                 handleIsolatedFromTopology();
             }
             return oldView;
         }
 
-        Collection<InstanceDescription> attachedInstances = getAnnouncementRegistry()
-                .listInstances(localClusterView);
+        Collection<InstanceDescription> attachedInstances =
+                getAnnouncementRegistry().listInstances(localClusterView);
         topology.addInstances(attachedInstances);
 
         return topology;
     }
-
 }

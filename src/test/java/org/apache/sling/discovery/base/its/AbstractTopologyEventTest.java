@@ -18,11 +18,7 @@
  */
 package org.apache.sling.discovery.base.its;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
+import ch.qos.logback.classic.Level;
 import org.apache.sling.discovery.TopologyEvent;
 import org.apache.sling.discovery.TopologyEvent.Type;
 import org.apache.sling.discovery.TopologyView;
@@ -35,7 +31,10 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import ch.qos.logback.classic.Level;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Test class covering correct sending of TopologyEvents
@@ -52,24 +51,26 @@ public abstract class AbstractTopologyEventTest {
 
     @Before
     public void setup() throws Exception {
-        final ch.qos.logback.classic.Logger discoveryLogger = (ch.qos.logback.classic.Logger)LoggerFactory.getLogger("org.apache.sling.discovery");
+        final ch.qos.logback.classic.Logger discoveryLogger =
+                (ch.qos.logback.classic.Logger) LoggerFactory.getLogger("org.apache.sling.discovery");
         logLevel = discoveryLogger.getLevel();
         discoveryLogger.setLevel(Level.DEBUG);
     }
 
     @After
     public void tearDown() throws Throwable {
-        if (instance1!=null) {
+        if (instance1 != null) {
             instance1.stopViewChecker();
             instance1.stop();
             instance1 = null;
         }
-        if (instance2!=null) {
+        if (instance2 != null) {
             instance2.stopViewChecker();
             instance2.stop();
             instance2 = null;
         }
-        final ch.qos.logback.classic.Logger discoveryLogger = (ch.qos.logback.classic.Logger)LoggerFactory.getLogger("org.apache.sling.discovery");
+        final ch.qos.logback.classic.Logger discoveryLogger =
+                (ch.qos.logback.classic.Logger) LoggerFactory.getLogger("org.apache.sling.discovery");
         discoveryLogger.setLevel(logLevel);
     }
 
@@ -83,14 +84,16 @@ public abstract class AbstractTopologyEventTest {
     @Test
     public void testDelayedInitEvent() throws Throwable {
         logger.info("testDelayedInitEvent: start");
-        instance1 = newBuilder().setDebugName("firstInstanceA")
+        instance1 = newBuilder()
+                .setDebugName("firstInstanceA")
                 .newRepository("/var/discovery/impl/", true)
                 .setConnectorPingTimeout(3 /* heartbeat-timeout */)
-                .setMinEventDelay(3 /*min event delay*/).build();
+                .setMinEventDelay(3 /*min event delay*/)
+                .build();
         AssertingTopologyEventListener l1 = new AssertingTopologyEventListener("instance1.l1");
         l1.addExpected(Type.TOPOLOGY_INIT);
         instance1.bindTopologyEventListener(l1);
-        logger.info("testDelayedInitEvent: instance1 created, no events expected yet. slingId="+instance1.slingId);
+        logger.info("testDelayedInitEvent: instance1 created, no events expected yet. slingId=" + instance1.slingId);
 
         instance1.heartbeatsAndCheckView();
         Thread.sleep(1200);
@@ -105,11 +108,13 @@ public abstract class AbstractTopologyEventTest {
         assertEquals(0, l1.getUnexpectedCount());
 
         logger.info("testDelayedInitEvent: creating instance2");
-        instance2 = newBuilder().setDebugName("secondInstanceB")
+        instance2 = newBuilder()
+                .setDebugName("secondInstanceB")
                 .useRepositoryOf(instance1)
                 .setConnectorPingTimeout(20)
-                .setMinEventDelay(3).build();
-        logger.info("testDelayedInitEvent: instance2 created with slingId="+instance2.slingId);
+                .setMinEventDelay(3)
+                .build();
+        logger.info("testDelayedInitEvent: instance2 created with slingId=" + instance2.slingId);
         AssertingTopologyEventListener l2 = new AssertingTopologyEventListener("instance2.l2");
         instance2.bindTopologyEventListener(l2);
         logger.info("testDelayedInitEvent: listener instance2.l2 added - it should not get any events though");
@@ -131,7 +136,6 @@ public abstract class AbstractTopologyEventTest {
         assertEquals(0, l1Two.getRemainingExpectedCount()); // the expected one
         assertEquals(0, l1Two.getUnexpectedCount());
 
-
         // the second & third heartbeat though triggers the voting etc
         logger.info("testDelayedInitEvent: two more heartbeats should trigger events");
         l1.addExpected(Type.TOPOLOGY_CHANGING);
@@ -146,15 +150,15 @@ public abstract class AbstractTopologyEventTest {
         Thread.sleep(500);
         instance1.heartbeatsAndCheckView();
         instance2.heartbeatsAndCheckView();
-        logger.info("testDelayedInitEvent: instance1: "+instance1.slingId);
-        logger.info("testDelayedInitEvent: instance2: "+instance2.slingId);
+        logger.info("testDelayedInitEvent: instance1: " + instance1.slingId);
+        logger.info("testDelayedInitEvent: instance2: " + instance2.slingId);
         instance1.dumpRepo();
         assertEquals(0, l1.getUnexpectedCount());
         assertEquals(2, l1.getEvents().size());
         assertEquals(0, l2.getUnexpectedCount());
         // with the switch to use the SyncTokenService in discovery.impl tests
         // by default, the following check is no longer possible:
-//        assertEquals(1, l2.getEvents().size());
+        //        assertEquals(1, l2.getEvents().size());
         // (this is due to the fact that synching requires some more time
         // and we're a bit early at this stage - the below same check
         // is the only one that we can do here really - and that one must work)
@@ -176,10 +180,12 @@ public abstract class AbstractTopologyEventTest {
 
     @Test
     public void testGetDuringDelay() throws Throwable {
-        instance1 = newBuilder().setDebugName("firstInstanceA")
+        instance1 = newBuilder()
+                .setDebugName("firstInstanceA")
                 .newRepository("/var/discovery/impl/", true)
                 .setConnectorPingTimeout(20 /* heartbeat-timeout */)
-                .setMinEventDelay(6 /* min event delay */).build();
+                .setMinEventDelay(6 /* min event delay */)
+                .build();
         AssertingTopologyEventListener l1 = new AssertingTopologyEventListener("instance1.l1");
         l1.addExpected(TopologyEvent.Type.TOPOLOGY_INIT);
         instance1.bindTopologyEventListener(l1);
@@ -189,13 +195,15 @@ public abstract class AbstractTopologyEventTest {
         assertFalse(earlyTopo.isCurrent());
         assertEquals(1, earlyTopo.getInstances().size());
 
-        for(int i=0; i<4; i++) {
+        for (int i = 0; i < 4; i++) {
             instance1.heartbeatsAndCheckView();
             Thread.sleep(125);
         }
         TopologyView secondTopo = instance1.getDiscoveryService().getTopology();
         assertEquals(1, secondTopo.getInstances().size());
-        assertEquals(instance1.getSlingId(), secondTopo.getInstances().iterator().next().getSlingId());
+        assertEquals(
+                instance1.getSlingId(),
+                secondTopo.getInstances().iterator().next().getSlingId());
         assertTrue(secondTopo.isCurrent());
         instance1.dumpRepo();
 
@@ -207,15 +215,17 @@ public abstract class AbstractTopologyEventTest {
         assertEquals(0, l1.getUnexpectedCount());
 
         l1.addExpected(TopologyEvent.Type.TOPOLOGY_CHANGING);
-        instance2 = newBuilder().setDebugName("secondInstanceB")
+        instance2 = newBuilder()
+                .setDebugName("secondInstanceB")
                 .useRepositoryOf(instance1)
                 .setConnectorPingTimeout(20)
-                .setMinEventDelay(1).build();
+                .setMinEventDelay(1)
+                .build();
         AssertingTopologyEventListener l2 = new AssertingTopologyEventListener("instance2.l1");
         l2.addExpected(TopologyEvent.Type.TOPOLOGY_INIT);
         instance2.bindTopologyEventListener(l2);
 
-        for(int i=0; i<4; i++) {
+        for (int i = 0; i < 4; i++) {
             instance2.heartbeatsAndCheckView();
             instance1.heartbeatsAndCheckView();
             Thread.sleep(750);
@@ -236,11 +246,12 @@ public abstract class AbstractTopologyEventTest {
         assertEquals(0, l2.getRemainingExpectedCount());
         assertEquals(0, l2.getUnexpectedCount());
         assertTrue(instance2.getDiscoveryService().getTopology().isCurrent());
-        assertEquals(2, instance2.getDiscoveryService().getTopology().getInstances().size());
+        assertEquals(
+                2, instance2.getDiscoveryService().getTopology().getInstances().size());
         assertTrue(instance1.getDiscoveryService().getTopology().isCurrent());
-        assertEquals(2, instance1.getDiscoveryService().getTopology().getInstances().size());
+        assertEquals(
+                2, instance1.getDiscoveryService().getTopology().getInstances().size());
     }
 
     public abstract void assertEarlyAndFirstClusterViewIdMatches(TopologyView earlyTopo, TopologyView secondTopo);
-
 }

@@ -29,15 +29,18 @@ public class DummyDiscoveryService extends BaseDiscoveryService {
     private final ClusterViewService clusterViewService;
     private final AnnouncementRegistry topologyRegistry;
 
-    public DummyDiscoveryService(String slingId,
+    public DummyDiscoveryService(
+            String slingId,
             ClusterViewService clusterViewService,
             AnnouncementRegistry topologyRegistry,
-            ResourceResolverFactory resourceResolverFactory, BaseConfig config, 
-            ConnectorRegistry connectorRegistry, Scheduler scheduler) {
+            ResourceResolverFactory resourceResolverFactory,
+            BaseConfig config,
+            ConnectorRegistry connectorRegistry,
+            Scheduler scheduler) {
         this.clusterViewService = clusterViewService;
         this.topologyRegistry = topologyRegistry;
     }
-    
+
     @Override
     protected ClusterViewService getClusterViewService() {
         return clusterViewService;
@@ -52,5 +55,4 @@ public class DummyDiscoveryService extends BaseDiscoveryService {
     protected void handleIsolatedFromTopology() {
         throw new IllegalStateException("handleIsolatedFromTopology not yet impl");
     }
-    
 }

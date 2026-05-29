@@ -39,8 +39,7 @@ public class AcceptsParticularTopologyEvent implements TopologyEventAsserter {
             // fine
             eventCnt++;
         } else {
-            throw new IllegalStateException("expected " + particularType
-                    + ", got " + event.getType());
+            throw new IllegalStateException("expected " + particularType + ", got " + event.getType());
         }
     }
 

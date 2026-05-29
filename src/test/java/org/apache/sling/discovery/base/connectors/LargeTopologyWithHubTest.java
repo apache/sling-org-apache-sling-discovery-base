@@ -18,8 +18,6 @@
  */
 package org.apache.sling.discovery.base.connectors;
 
-import static org.junit.Assert.assertNotNull;
-
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -41,6 +39,8 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static org.junit.Assert.assertNotNull;
+
 public class LargeTopologyWithHubTest {
 
     private static final Logger logger = LoggerFactory.getLogger(LargeTopologyWithHubTest.class);
@@ -49,14 +49,14 @@ public class LargeTopologyWithHubTest {
     private static VirtualInstance hub;
     private static List<String> slingIds;
     private static final int TEST_SIZE = 50;
-    
+
     @Rule
     public final SlingContext context = new SlingContext(ResourceResolverType.JCR_MOCK);
 
     private VirtualInstanceBuilder newBuilder() {
         return new DummyVirtualInstanceBuilder().setSlingContext(context);
     }
-    
+
     @Before
     public void setup() throws Throwable {
         instances = new LinkedList<>();
@@ -70,28 +70,28 @@ public class LargeTopologyWithHubTest {
         hub = hubBuilder.build();
         instances.add(hub);
         hub.getConfig().setViewCheckTimeout(heartbeatTimeout);
-//        hub.installVotingOnHeartbeatHandler();
+        //        hub.installVotingOnHeartbeatHandler();
         hub.heartbeatsAndCheckView();
         hub.heartbeatsAndCheckView();
         assertNotNull(hub.getClusterViewService().getLocalClusterView());
         hub.startViewChecker(1);
         hub.dumpRepo();
-        
+
         slingIds = new LinkedList<>();
         slingIds.add(hub.getSlingId());
-        logger.info("setUp: using heartbeatTimeout of "+heartbeatTimeout+"sec "
-                + "(default: "+defaultHeartbeatTimeout+")");
-        for(int i=0; i<TEST_SIZE; i++) {
-            logger.info("setUp: creating instance"+i);
+        logger.info("setUp: using heartbeatTimeout of " + heartbeatTimeout + "sec " + "(default: "
+                + defaultHeartbeatTimeout + ")");
+        for (int i = 0; i < TEST_SIZE; i++) {
+            logger.info("setUp: creating instance" + i);
             VirtualInstanceBuilder builder2 = newBuilder()
                     .newRepository("/var/discovery/impl/", false)
-                    .setDebugName("instance"+i)
+                    .setDebugName("instance" + i)
                     .setConnectorPingInterval(5)
                     .setConnectorPingTimeout(heartbeatTimeout);
             VirtualInstance instance = builder2.build();
             instances.add(instance);
             instance.getConfig().setViewCheckTimeout(heartbeatTimeout);
-//            instance.installVotingOnHeartbeatHandler();
+            //            instance.installVotingOnHeartbeatHandler();
             instance.heartbeatsAndCheckView();
             instance.heartbeatsAndCheckView();
             ClusterView clusterView = instance.getClusterViewService().getLocalClusterView();
@@ -100,35 +100,38 @@ public class LargeTopologyWithHubTest {
             slingIds.add(instance.getSlingId());
         }
     }
-    
+
     @After
     public void tearDown() throws Exception {
-        for (Iterator<VirtualInstance> it = instances.iterator(); it.hasNext();) {
+        for (Iterator<VirtualInstance> it = instances.iterator(); it.hasNext(); ) {
             final VirtualInstance instance = it.next();
             instance.stop();
         }
     }
-    
+
     @Test
     public void testLargeTopologyWithHub() throws Exception {
-        new RetryLoop(new RetryLoop.Condition() {
-            @Override
-            public String getDescription() {
-                return "Waiting for large topology with hub to stabilize";
-            }
+        new RetryLoop(
+                new RetryLoop.Condition() {
+                    @Override
+                    public String getDescription() {
+                        return "Waiting for large topology with hub to stabilize";
+                    }
 
-            @Override
-            public boolean isTrue() throws Exception {
-                hub.dumpRepo();
-                final TopologyView tv = hub.getDiscoveryService().getTopology();
-                assertNotNull(tv);
-                logger.info(
-                        "testLargeTopologyWithHub: checking if all connectors are registered, TopologyView has {} Instances", 
-                        tv.getInstances().size());
-                TopologyHelper.assertTopologyConsistsOf(tv, slingIds.toArray(new String[slingIds.size()]));
-                logger.info("testLargeTopologyWithHub: test passed");
-                return true;
-            }
-        }, 30 /*seconds*/, 500 /*millis*/);
+                    @Override
+                    public boolean isTrue() throws Exception {
+                        hub.dumpRepo();
+                        final TopologyView tv = hub.getDiscoveryService().getTopology();
+                        assertNotNull(tv);
+                        logger.info(
+                                "testLargeTopologyWithHub: checking if all connectors are registered, TopologyView has {} Instances",
+                                tv.getInstances().size());
+                        TopologyHelper.assertTopologyConsistsOf(tv, slingIds.toArray(new String[slingIds.size()]));
+                        logger.info("testLargeTopologyWithHub: test passed");
+                        return true;
+                    }
+                },
+                30 /*seconds*/,
+                500 /*millis*/);
     }
 }

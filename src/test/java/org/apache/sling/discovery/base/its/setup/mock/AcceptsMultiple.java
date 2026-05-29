@@ -49,17 +49,15 @@ public class AcceptsMultiple implements TopologyEventAsserter {
             }
         }
 
-        throw new IllegalStateException("Got an Event which I did not expect: "
-                + event.getType());
+        throw new IllegalStateException("Got an Event which I did not expect: " + event.getType());
     }
 
     public synchronized int getEventCnt(Type type) {
         Integer i = counts.get(type);
-        if (i!=null) {
+        if (i != null) {
             return i;
         } else {
             return 0;
         }
     }
-
 }

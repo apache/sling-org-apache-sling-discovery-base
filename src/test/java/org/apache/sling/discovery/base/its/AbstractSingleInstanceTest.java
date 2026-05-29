@@ -18,17 +18,11 @@
  */
 package org.apache.sling.discovery.base.its;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import ch.qos.logback.classic.Level;
 import org.apache.sling.discovery.ClusterView;
 import org.apache.sling.discovery.InstanceDescription;
 import org.apache.sling.discovery.TopologyEvent;
@@ -44,7 +38,12 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import ch.qos.logback.classic.Level;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public abstract class AbstractSingleInstanceTest {
 
@@ -60,24 +59,29 @@ public abstract class AbstractSingleInstanceTest {
 
     @Before
     public void setup() throws Exception {
-        final ch.qos.logback.classic.Logger discoveryLogger = (ch.qos.logback.classic.Logger)LoggerFactory.getLogger("org.apache.sling.discovery");
+        final ch.qos.logback.classic.Logger discoveryLogger =
+                (ch.qos.logback.classic.Logger) LoggerFactory.getLogger("org.apache.sling.discovery");
         logLevel = discoveryLogger.getLevel();
         discoveryLogger.setLevel(Level.DEBUG);
         logger.info("setup: creating new standalone instance");
-        instance = newBuilder().setDebugName("standaloneInstance")
+        instance = newBuilder()
+                .setDebugName("standaloneInstance")
                 .newRepository("/var/discovery/impl/", true)
                 .setConnectorPingTimeout(20)
-                .setConnectorPingInterval(999)/*long enough heartbeat interval to prevent them to disturb the explicit heartbeats during the test*/
-                .setMinEventDelay(3).build();
+                .setConnectorPingInterval(
+                        999) /*long enough heartbeat interval to prevent them to disturb the explicit heartbeats during the test*/
+                .setMinEventDelay(3)
+                .build();
         logger.info("setup: creating new standalone instance done.");
     }
 
     @After
     public void tearDown() throws Exception {
-        final ch.qos.logback.classic.Logger discoveryLogger = (ch.qos.logback.classic.Logger)LoggerFactory.getLogger("org.apache.sling.discovery");
+        final ch.qos.logback.classic.Logger discoveryLogger =
+                (ch.qos.logback.classic.Logger) LoggerFactory.getLogger("org.apache.sling.discovery");
         discoveryLogger.setLevel(logLevel);
         logger.info("tearDown: stopping standalone instance");
-        if (instance!=null) {
+        if (instance != null) {
             instance.stop();
             instance = null;
         }
@@ -89,10 +93,10 @@ public abstract class AbstractSingleInstanceTest {
         logger.info("testGetters: start");
         assertNotNull(instance);
         logger.info("sling id=" + instance.getSlingId());
-        try{
+        try {
             instance.getClusterViewService().getLocalClusterView();
             fail("should complain"); // SLING-5030
-        } catch(UndefinedClusterViewException e) {
+        } catch (UndefinedClusterViewException e) {
             // ok
         }
 
@@ -139,19 +143,29 @@ public abstract class AbstractSingleInstanceTest {
         instance.heartbeatsAndCheckView();
         // wait 4000ms for the vote to happen
         Thread.sleep(4000);
-        assertEquals(propertyValue,
-                instance.getClusterViewService().getLocalClusterView()
-                        .getInstances().get(0).getProperty(propertyName));
+        assertEquals(
+                propertyValue,
+                instance.getClusterViewService()
+                        .getLocalClusterView()
+                        .getInstances()
+                        .get(0)
+                        .getProperty(propertyName));
 
         propertyValue = UUID.randomUUID().toString();
         pp.setProperty(propertyName, propertyValue);
         instance.heartbeatsAndCheckView();
 
-        assertEquals(propertyValue,
-                instance.getClusterViewService().getLocalClusterView()
-                        .getInstances().get(0).getProperty(propertyName));
-        assertNull(instance.getClusterViewService().getLocalClusterView()
-                .getInstances().get(0)
+        assertEquals(
+                propertyValue,
+                instance.getClusterViewService()
+                        .getLocalClusterView()
+                        .getInstances()
+                        .get(0)
+                        .getProperty(propertyName));
+        assertNull(instance.getClusterViewService()
+                .getLocalClusterView()
+                .getInstances()
+                .get(0)
                 .getProperty(UUID.randomUUID().toString()));
         logger.info("testPropertyProviders: end");
     }
@@ -177,16 +191,20 @@ public abstract class AbstractSingleInstanceTest {
         logger.info("testInvalidProperties: end");
     }
 
-	private void doTestProperty(final String propertyName,
-			final String propertyValue,
-			final String expectedPropertyValue) throws Throwable {
-		PropertyProviderImpl pp = new PropertyProviderImpl();
+    private void doTestProperty(
+            final String propertyName, final String propertyValue, final String expectedPropertyValue)
+            throws Throwable {
+        PropertyProviderImpl pp = new PropertyProviderImpl();
         pp.setProperty(propertyName, propertyValue);
         instance.bindPropertyProvider(pp, propertyName);
-        assertEquals(expectedPropertyValue,
-                instance.getClusterViewService().getLocalClusterView()
-                        .getInstances().get(0).getProperty(propertyName));
-	}
+        assertEquals(
+                expectedPropertyValue,
+                instance.getClusterViewService()
+                        .getLocalClusterView()
+                        .getInstances()
+                        .get(0)
+                        .getProperty(propertyName));
+    }
 
     @Test
     public void testTopologyEventListeners() throws Throwable {
@@ -249,10 +267,10 @@ public abstract class AbstractSingleInstanceTest {
     @Test
     public void testBootstrap() throws Throwable {
         logger.info("testBootstrap: start");
-        try{
+        try {
             instance.getClusterViewService().getLocalClusterView();
             fail("should complain");
-        } catch(UndefinedClusterViewException e) {
+        } catch (UndefinedClusterViewException e) {
             // SLING-5030 : isolated mode is gone, replaced with exception
             // ok
         }
@@ -264,10 +282,10 @@ public abstract class AbstractSingleInstanceTest {
         assertEquals(0, ada.getEvents().size());
         assertEquals(0, ada.getUnexpectedCount());
 
-        try{
+        try {
             instance.getClusterViewService().getLocalClusterView();
             fail("should complain");
-        } catch(UndefinedClusterViewException e) {
+        } catch (UndefinedClusterViewException e) {
             // ok
         }
 
@@ -292,5 +310,4 @@ public abstract class AbstractSingleInstanceTest {
         instance.assertEstablishedView();
         logger.info("testBootstrap: end");
     }
-
 }

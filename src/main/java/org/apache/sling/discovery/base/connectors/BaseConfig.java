@@ -36,7 +36,7 @@ public interface BaseConfig {
      * @return the socket read timeout (SO_TIMEOUT) used by the topology connector, 0 disables the timeout
      */
     public int getSoTimeout();
-    
+
     /**
      * Returns the URLs to which to open a topology connector - or null/empty if no topology connector
      * is configured (default is null)
@@ -59,7 +59,6 @@ public interface BaseConfig {
      */
     public String getClusterInstancesPath();
 
-
     /**
      * @return true if hmac is enabled.
      */
@@ -79,13 +78,13 @@ public interface BaseConfig {
      * @return true if encryption is enabled.
      */
     public boolean isEncryptionEnabled();
-    
+
     /**
      * @return true if requests on the topology connector should be gzipped
      * (which only works if the server accepts that.. ie discovery.impl 1.0.4+)
      */
     public boolean isGzipConnectorRequestsEnabled();
-    
+
     /**
      * @return true if the auto-stopping of local-loop topology connectors is enabled.
      */
@@ -125,5 +124,4 @@ public interface BaseConfig {
      * The minEventDelay to apply to the ViewStateManager
      */
     public int getMinEventDelay();
-
 }

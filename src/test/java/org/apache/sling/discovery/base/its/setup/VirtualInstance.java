@@ -18,12 +18,7 @@
  */
 package org.apache.sling.discovery.base.its.setup;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.mock;
+import javax.servlet.Servlet;
 
 import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
@@ -34,8 +29,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import javax.servlet.Servlet;
-
+import junitx.util.PrivateAccessor;
 import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.api.resource.ResourceResolverFactory;
 import org.apache.sling.discovery.InstanceDescription;
@@ -64,11 +58,16 @@ import org.osgi.service.http.HttpService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import junitx.util.PrivateAccessor;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.mock;
 
 public class VirtualInstance {
 
-    protected final static Logger logger = LoggerFactory.getLogger(VirtualInstance.class);
+    protected static final Logger logger = LoggerFactory.getLogger(VirtualInstance.class);
 
     public final String slingId;
 
@@ -104,68 +103,67 @@ public class VirtualInstance {
 
     private class ViewCheckerRunner implements Runnable {
 
-    	private final int intervalInSeconds;
+        private final int intervalInSeconds;
 
-    	private boolean stopping_ = false;
+        private boolean stopping_ = false;
 
         private volatile boolean stopped_ = false;
 
         public ViewCheckerRunner(int intervalInSeconds) {
-    		this.intervalInSeconds = intervalInSeconds;
-    	}
+            this.intervalInSeconds = intervalInSeconds;
+        }
 
-		public synchronized void stop() {
-			logger.info("Stopping Instance ["+slingId+"]");
-			stopping_ = true;
-			this.notifyAll();
-		}
+        public synchronized void stop() {
+            logger.info("Stopping Instance [" + slingId + "]");
+            stopping_ = true;
+            this.notifyAll();
+        }
 
-		public boolean hasStopped() {
-		    return stopped_;
-		}
+        public boolean hasStopped() {
+            return stopped_;
+        }
 
-		@Override
+        @Override
         public void run() {
-		    try{
-		        doRun();
-		    } finally {
-		        stopped_ = true;
-                logger.info("Instance ["+slingId+"] stopped.");
-		    }
-		}
+            try {
+                doRun();
+            } finally {
+                stopped_ = true;
+                logger.info("Instance [" + slingId + "] stopped.");
+            }
+        }
 
-		public void doRun() {
-			while(true) {
-				synchronized(this) {
-					if (stopping_) {
-						logger.info("Instance ["+slingId+"] stopps.");
-						return;
-					}
-				}
-				try{
-				    heartbeatsAndCheckView();
-				} catch(Exception e) {
-				    logger.error("run: ping connector for slingId="+slingId+" threw exception: "+e, e);
-				}
-				synchronized(this) {
-    				try {
-    					this.wait(intervalInSeconds*1000);
-    				} catch (InterruptedException e) {
-    					e.printStackTrace();
-    					return;
-    				}
-				}
-			}
-		}
-
+        public void doRun() {
+            while (true) {
+                synchronized (this) {
+                    if (stopping_) {
+                        logger.info("Instance [" + slingId + "] stopps.");
+                        return;
+                    }
+                }
+                try {
+                    heartbeatsAndCheckView();
+                } catch (Exception e) {
+                    logger.error("run: ping connector for slingId=" + slingId + " threw exception: " + e, e);
+                }
+                synchronized (this) {
+                    try {
+                        this.wait(intervalInSeconds * 1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                        return;
+                    }
+                }
+            }
+        }
     }
 
     public VirtualInstance(VirtualInstanceBuilder builder) throws Exception {
         this.builder = builder;
-    	this.slingId = builder.getSlingId();
+        this.slingId = builder.getSlingId();
         this.debugName = builder.getDebugName();
         this.delay = builder.getDelay();
-        logger.info("<init>: starting slingId="+slingId+", debugName="+debugName);
+        logger.info("<init>: starting slingId=" + slingId + ", debugName=" + debugName);
 
         SlingContext tempSlingContext = builder.getSlingContext();
         if (tempSlingContext == null) {
@@ -183,7 +181,7 @@ public class VirtualInstance {
         announcementRegistry = builder.getAnnouncementRegistry();
         connectorRegistry = builder.getConnectorRegistry();
         viewChecker = builder.getViewChecker();
-		discoveryService = builder.getDiscoverService();
+        discoveryService = builder.getDiscoverService();
 
         // Register services with SlingContext
         this.slingContext.registerService(ClusterViewService.class, clusterViewService);
@@ -192,11 +190,10 @@ public class VirtualInstance {
         this.slingContext.registerService(ViewChecker.class, viewChecker);
         this.slingContext.registerService(BaseDiscoveryService.class, discoveryService);
 
-        resourceResolver = resourceResolverFactory
-                .getServiceResourceResolver(null);
+        resourceResolver = resourceResolverFactory.getServiceResourceResolver(null);
 
         if (builder.isResetRepo()) {
-            //SLING-4587 : do resetRepo before creating the observationListener
+            // SLING-4587 : do resetRepo before creating the observationListener
             // otherwise it will get tons of events from the deletion of /var
             // which the previous test could have left over.
             // Doing it before addEventListener should prevent that.
@@ -210,18 +207,19 @@ public class VirtualInstance {
 
     @Override
     public String toString() {
-        return "a [Test]Instance[slingId="+slingId+", debugName="+debugName+"]";
+        return "a [Test]Instance[slingId=" + slingId + ", debugName=" + debugName + "]";
     }
 
-    public void bindPropertyProvider(PropertyProvider propertyProvider,
-            String... propertyNames) throws Throwable {
+    public void bindPropertyProvider(PropertyProvider propertyProvider, String... propertyNames) throws Throwable {
         Map<String, Object> props = new HashMap<>();
         props.put(Constants.SERVICE_ID, (long) serviceId++);
         props.put(PropertyProvider.PROPERTY_PROPERTIES, propertyNames);
 
-        PrivateAccessor.invoke(discoveryService, "bindPropertyProvider",
-                new Class[] { PropertyProvider.class, Map.class },
-                new Object[] { propertyProvider, props });
+        PrivateAccessor.invoke(
+                discoveryService,
+                "bindPropertyProvider",
+                new Class[] {PropertyProvider.class, Map.class},
+                new Object[] {propertyProvider, props});
     }
 
     public String getSlingId() {
@@ -241,7 +239,7 @@ public class VirtualInstance {
     }
 
     public synchronized void startJetty() throws Throwable {
-        if (jettyServer!=null) {
+        if (jettyServer != null) {
             return;
         }
 
@@ -263,7 +261,9 @@ public class VirtualInstance {
         PrivateAccessor.setField(servlet, "announcementRegistry", announcementRegistry);
 
         final HttpService httpService = mock(HttpService.class);
-        doNothing().when(httpService).registerServlet(anyString(), any(Servlet.class), any(Dictionary.class), any(HttpContext.class));
+        doNothing()
+                .when(httpService)
+                .registerServlet(anyString(), any(Servlet.class), any(Dictionary.class), any(HttpContext.class));
         PrivateAccessor.setField(servlet, "httpService", httpService);
         ComponentContext cc = null;
         PrivateAccessor.invoke(servlet, "activate", new Class[] {ComponentContext.class}, new Object[] {cc});
@@ -279,11 +279,11 @@ public class VirtualInstance {
     }
 
     public synchronized int getJettyPort() {
-        if (jettyServer==null) {
+        if (jettyServer == null) {
             throw new IllegalStateException("jettyServer not started");
         }
         final Connector[] connectors = jettyServer.getConnectors();
-        return ((NetworkConnector)connectors[0]).getLocalPort();
+        return ((NetworkConnector) connectors[0]).getLocalPort();
     }
 
     public TopologyConnectorClientInformation connectTo(String url) throws MalformedURLException {
@@ -291,52 +291,53 @@ public class VirtualInstance {
     }
 
     public InstanceDescription getLocalInstanceDescription() throws UndefinedClusterViewException {
-    	final Iterator<InstanceDescription> it = getClusterViewService().getLocalClusterView().getInstances().iterator();
-    	while(it.hasNext()) {
-    		final InstanceDescription id = it.next();
-    		if (slingId.equals(id.getSlingId())) {
-    			return id;
-    		}
-    	}
-    	fail("no local instanceDescription found");
-    	// never called:
-    	return null;
+        final Iterator<InstanceDescription> it =
+                getClusterViewService().getLocalClusterView().getInstances().iterator();
+        while (it.hasNext()) {
+            final InstanceDescription id = it.next();
+            if (slingId.equals(id.getSlingId())) {
+                return id;
+            }
+        }
+        fail("no local instanceDescription found");
+        // never called:
+        return null;
     }
 
     public void heartbeatsAndCheckView() {
-    	logger.info("Instance ["+slingId+"] issues a pulse now "+new Date());
+        logger.info("Instance [" + slingId + "] issues a pulse now " + new Date());
         viewChecker.heartbeatAndCheckView();
     }
 
     public void startViewChecker(int intervalInSeconds) throws IllegalAccessException, InvocationTargetException {
-    	logger.info("startViewChecker: intervalInSeconds="+intervalInSeconds);
-    	if (viewCheckerRunner!=null) {
-    		logger.info("startViewChecker: stopping first...");
-    		viewCheckerRunner.stop();
-    		logger.info("startViewChecker: stopped.");
-    	}
-    	viewCheckerRunner = new ViewCheckerRunner(intervalInSeconds);
-    	Thread th = new Thread(viewCheckerRunner, "Test-ViewCheckerRunner ["+debugName+"]");
-    	th.setDaemon(true);
-		logger.info("startViewChecker: starting thread...");
-    	th.start();
-		logger.info("startViewChecker: done.");
+        logger.info("startViewChecker: intervalInSeconds=" + intervalInSeconds);
+        if (viewCheckerRunner != null) {
+            logger.info("startViewChecker: stopping first...");
+            viewCheckerRunner.stop();
+            logger.info("startViewChecker: stopped.");
+        }
+        viewCheckerRunner = new ViewCheckerRunner(intervalInSeconds);
+        Thread th = new Thread(viewCheckerRunner, "Test-ViewCheckerRunner [" + debugName + "]");
+        th.setDaemon(true);
+        logger.info("startViewChecker: starting thread...");
+        th.start();
+        logger.info("startViewChecker: done.");
     }
 
-	public boolean isViewCheckerRunning() {
-		return (viewCheckerRunner!=null);
-	}
+    public boolean isViewCheckerRunning() {
+        return (viewCheckerRunner != null);
+    }
 
     public void stopViewChecker() throws Throwable {
-    	if (viewCheckerRunner!=null) {
-    		viewCheckerRunner.stop();
-    		while(!viewCheckerRunner.hasStopped()) {
-    		    logger.info("stopViewChecker: ["+getDebugName()+"] waiting for viewCheckerRunner to stop");
-    		    Thread.sleep(500);
-    		}
-            logger.info("stopViewChecker: ["+getDebugName()+"] viewCheckerRunner stopped");
-    		viewCheckerRunner = null;
-    	}
+        if (viewCheckerRunner != null) {
+            viewCheckerRunner.stop();
+            while (!viewCheckerRunner.hasStopped()) {
+                logger.info("stopViewChecker: [" + getDebugName() + "] waiting for viewCheckerRunner to stop");
+                Thread.sleep(500);
+            }
+            logger.info("stopViewChecker: [" + getDebugName() + "] viewCheckerRunner stopped");
+            viewCheckerRunner = null;
+        }
     }
 
     public void dumpRepo() throws Exception {
@@ -348,24 +349,24 @@ public class VirtualInstance {
     }
 
     public void stop() throws Exception {
-        logger.info("stop: stopping slingId="+slingId+", debugName="+debugName);
+        logger.info("stop: stopping slingId=" + slingId + ", debugName=" + debugName);
         try {
             stopViewChecker();
         } catch (Throwable e) {
-            throw new Exception("Caught Throwable in stop(): "+e, e);
+            throw new Exception("Caught Throwable in stop(): " + e, e);
         }
 
         if (resourceResolver != null) {
             resourceResolver.close();
         }
-        logger.info("stop: stopped slingId="+slingId+", debugName="+debugName);
+        logger.info("stop: stopped slingId=" + slingId + ", debugName=" + debugName);
     }
 
-    public void bindTopologyEventListener(TopologyEventListener eventListener)
-            throws Throwable {
-        PrivateAccessor.invoke(discoveryService, "bindTopologyEventListener",
-                new Class[] { TopologyEventListener.class },
-                new Object[] { eventListener });
+    public void bindTopologyEventListener(TopologyEventListener eventListener) throws Throwable {
+        PrivateAccessor.invoke(
+                discoveryService, "bindTopologyEventListener", new Class[] {TopologyEventListener.class}, new Object[] {
+                    eventListener
+                });
     }
 
     public ModifiableTestBaseConfig getConfig() {
@@ -387,6 +388,4 @@ public class VirtualInstance {
     public String getDebugName() {
         return debugName;
     }
-
-
 }

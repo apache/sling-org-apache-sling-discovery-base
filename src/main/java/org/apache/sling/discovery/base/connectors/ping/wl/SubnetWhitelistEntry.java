@@ -30,18 +30,17 @@ import org.apache.commons.net.util.SubnetUtils.SubnetInfo;
 public class SubnetWhitelistEntry implements WhitelistEntry {
 
     private final SubnetInfo subnetInfo;
-    
+
     public SubnetWhitelistEntry(String cidrNotation) {
         subnetInfo = new SubnetUtils(cidrNotation).getInfo();
     }
-    
+
     public SubnetWhitelistEntry(String ip, String subnetMask) {
         subnetInfo = new SubnetUtils(ip, subnetMask).getInfo();
     }
-    
+
     public boolean accepts(ServletRequest request) {
         final String remoteAddr = request.getRemoteAddr();
         return subnetInfo.isInRange(remoteAddr);
     }
-
 }

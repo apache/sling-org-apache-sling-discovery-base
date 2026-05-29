@@ -18,17 +18,11 @@
  */
 package org.apache.sling.discovery.base.commons;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 import java.util.Iterator;
 import java.util.Set;
 import java.util.UUID;
 
+import junitx.util.PrivateAccessor;
 import org.apache.sling.discovery.InstanceDescription;
 import org.apache.sling.discovery.InstanceFilter;
 import org.apache.sling.discovery.TopologyEvent;
@@ -39,7 +33,12 @@ import org.apache.sling.discovery.commons.providers.DefaultInstanceDescription;
 import org.apache.sling.discovery.commons.providers.spi.LocalClusterView;
 import org.junit.Test;
 
-import junitx.util.PrivateAccessor;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class DefaultTopologyViewTest {
 
@@ -47,34 +46,38 @@ public class DefaultTopologyViewTest {
     public void testForcedLeaderChangeCompare() throws Exception {
         // create view 1 with first instance the leader
         final String slingId1 = UUID.randomUUID().toString();
-        final DefaultTopologyView view1 = TopologyHelper.createTopologyView(UUID
-                .randomUUID().toString(), slingId1);
-        final DefaultInstanceDescription id2 = TopologyHelper.addInstanceDescription(view1, TopologyHelper
-                .createInstanceDescription(view1.getClusterViews().iterator()
-                        .next()));
+        final DefaultTopologyView view1 =
+                TopologyHelper.createTopologyView(UUID.randomUUID().toString(), slingId1);
+        final DefaultInstanceDescription id2 = TopologyHelper.addInstanceDescription(
+                view1,
+                TopologyHelper.createInstanceDescription(
+                        view1.getClusterViews().iterator().next()));
         final String slingId2 = id2.getSlingId();
-        final DefaultInstanceDescription id3 = TopologyHelper.addInstanceDescription(view1, TopologyHelper
-                .createInstanceDescription(view1.getClusterViews().iterator()
-                        .next()));
+        final DefaultInstanceDescription id3 = TopologyHelper.addInstanceDescription(
+                view1,
+                TopologyHelper.createInstanceDescription(
+                        view1.getClusterViews().iterator().next()));
         final String slingId3 = id3.getSlingId();
-        
+
         // now create view 2 with exactly the same instances as above, but the second instance the leader
         DefaultTopologyView view2 = TopologyHelper.cloneTopologyView(view1, slingId2);
         // make sure we've chosen a new leader:
-        assertNotEquals(view1.getClusterViews().iterator().next().getLeader().getSlingId(),
+        assertNotEquals(
+                view1.getClusterViews().iterator().next().getLeader().getSlingId(),
                 view2.getClusterViews().iterator().next().getLeader().getSlingId());
         // and now test the compare method which should catch the leader change
-        assertTrue(view1.compareTopology(view2)==Type.TOPOLOGY_CHANGED);
-        
+        assertTrue(view1.compareTopology(view2) == Type.TOPOLOGY_CHANGED);
+
         // same thing now with view3 which takes slingId3 as the leader
         DefaultTopologyView view3 = TopologyHelper.cloneTopologyView(view1, slingId3);
         // make sure we've chosen a new leader:
-        assertNotEquals(view1.getClusterViews().iterator().next().getLeader().getSlingId(),
+        assertNotEquals(
+                view1.getClusterViews().iterator().next().getLeader().getSlingId(),
                 view3.getClusterViews().iterator().next().getLeader().getSlingId());
         // and now test the compare method which should catch the leader change
-        assertTrue(view1.compareTopology(view3)==Type.TOPOLOGY_CHANGED);
+        assertTrue(view1.compareTopology(view3) == Type.TOPOLOGY_CHANGED);
     }
-    
+
     @Test
     public void testComparelocalClusterSyncTokenId() throws Exception {
         String clusterViewId = UUID.randomUUID().toString();
@@ -86,13 +89,14 @@ public class DefaultTopologyViewTest {
 
         assertNull(t1.compareTopology(t2));
         assertNull(t2.compareTopology(t1));
-        
-        DefaultTopologyView t3 = createSingleInstanceTopology(slingId, clusterViewId, UUID.randomUUID().toString());
+
+        DefaultTopologyView t3 = createSingleInstanceTopology(
+                slingId, clusterViewId, UUID.randomUUID().toString());
         assertEquals(TopologyEvent.Type.TOPOLOGY_CHANGED, t1.compareTopology(t3));
         assertEquals(TopologyEvent.Type.TOPOLOGY_CHANGED, t3.compareTopology(t1));
         assertEquals(TopologyEvent.Type.TOPOLOGY_CHANGED, t2.compareTopology(t3));
         assertEquals(TopologyEvent.Type.TOPOLOGY_CHANGED, t3.compareTopology(t2));
-        
+
         DefaultTopologyView t4 = createSingleInstanceTopology(slingId, clusterViewId, null);
         assertEquals(TopologyEvent.Type.TOPOLOGY_CHANGED, t1.compareTopology(t4));
         assertEquals(TopologyEvent.Type.TOPOLOGY_CHANGED, t4.compareTopology(t1));
@@ -106,18 +110,17 @@ public class DefaultTopologyViewTest {
 
     private DefaultTopologyView createSingleInstanceTopology(String slingId, String clusterViewId, String syncTokenId) {
         LocalClusterView clusterView = new LocalClusterView(clusterViewId, syncTokenId);
-        DefaultInstanceDescription instance = 
-                TopologyHelper.createInstanceDescription(slingId, true, clusterView);
+        DefaultInstanceDescription instance = TopologyHelper.createInstanceDescription(slingId, true, clusterView);
         DefaultTopologyView t = new DefaultTopologyView();
         t.setLocalClusterView(clusterView);
         return t;
     }
-    
+
     @Test
     public void testCompare() throws Exception {
 
-        DefaultTopologyView newView = TopologyHelper.createTopologyView(UUID
-                .randomUUID().toString(), UUID.randomUUID().toString());
+        DefaultTopologyView newView = TopologyHelper.createTopologyView(
+                UUID.randomUUID().toString(), UUID.randomUUID().toString());
 
         try {
             newView.compareTopology(null);
@@ -126,13 +129,11 @@ public class DefaultTopologyViewTest {
             // ok
         }
 
-        DefaultTopologyView oldView = TopologyHelper
-                .cloneTopologyView(newView);
+        DefaultTopologyView oldView = TopologyHelper.cloneTopologyView(newView);
         assertNull(newView.compareTopology(oldView));
 
-        DefaultInstanceDescription id = TopologyHelper
-                .createInstanceDescription(newView.getClusterViews().iterator()
-                        .next());
+        DefaultInstanceDescription id = TopologyHelper.createInstanceDescription(
+                newView.getClusterViews().iterator().next());
         TopologyHelper.addInstanceDescription(newView, id);
         assertEquals(Type.TOPOLOGY_CHANGED, newView.compareTopology(oldView));
 
@@ -152,7 +153,8 @@ public class DefaultTopologyViewTest {
         oldView = TopologyHelper.cloneTopologyView(newView);
         assertNull(newView.compareTopology(oldView));
 
-        DefaultInstanceDescription instance = (DefaultInstanceDescription) newView.getInstances().iterator().next();
+        DefaultInstanceDescription instance =
+                (DefaultInstanceDescription) newView.getInstances().iterator().next();
         instance.setProperty("a", "b");
         assertEquals(Type.PROPERTIES_CHANGED, newView.compareTopology(oldView));
         oldView = TopologyHelper.cloneTopologyView(newView);
@@ -165,7 +167,7 @@ public class DefaultTopologyViewTest {
 
         instance.setProperty("a", "B");
         assertNull(newView.compareTopology(oldView));
-        
+
         // now change the properties of the first instance but modify the second instance' cluster
         Iterator<InstanceDescription> it = newView.getInstances().iterator();
         DefaultInstanceDescription firstInstance = (DefaultInstanceDescription) it.next();
@@ -181,10 +183,10 @@ public class DefaultTopologyViewTest {
 
     @Test
     public void testFind() throws Exception {
-        DefaultTopologyView newView = TopologyHelper.createTopologyView(UUID
-                .randomUUID().toString(), UUID.randomUUID().toString());
-        TopologyHelper.createAndAddInstanceDescription(newView, newView
-                .getClusterViews().iterator().next());
+        DefaultTopologyView newView = TopologyHelper.createTopologyView(
+                UUID.randomUUID().toString(), UUID.randomUUID().toString());
+        TopologyHelper.createAndAddInstanceDescription(
+                newView, newView.getClusterViews().iterator().next());
 
         try {
             newView.findInstances(null);
@@ -193,46 +195,57 @@ public class DefaultTopologyViewTest {
             // ok
         }
 
-        final DefaultInstanceDescription id = TopologyHelper
-                .createAndAddInstanceDescription(newView, newView
-                        .getClusterViews().iterator().next());
-        TopologyHelper.createAndAddInstanceDescription(newView, newView
-                .getClusterViews().iterator().next());
-        assertEquals(4, newView.findInstances(new InstanceFilter() {
+        final DefaultInstanceDescription id = TopologyHelper.createAndAddInstanceDescription(
+                newView, newView.getClusterViews().iterator().next());
+        TopologyHelper.createAndAddInstanceDescription(
+                newView, newView.getClusterViews().iterator().next());
+        assertEquals(
+                4,
+                newView.findInstances(new InstanceFilter() {
 
-            public boolean accept(InstanceDescription instance) {
-                return true;
-            }
-        }).size());
-        assertEquals(1, newView.findInstances(new InstanceFilter() {
+                            public boolean accept(InstanceDescription instance) {
+                                return true;
+                            }
+                        })
+                        .size());
+        assertEquals(
+                1,
+                newView.findInstances(new InstanceFilter() {
 
-            public boolean accept(InstanceDescription instance) {
-                return instance.getSlingId().equals(id.getSlingId());
-            }
-        }).size());
-        assertEquals(1, newView.findInstances(new InstanceFilter() {
+                            public boolean accept(InstanceDescription instance) {
+                                return instance.getSlingId().equals(id.getSlingId());
+                            }
+                        })
+                        .size());
+        assertEquals(
+                1,
+                newView.findInstances(new InstanceFilter() {
 
-            public boolean accept(InstanceDescription instance) {
-                return instance.isLeader();
-            }
-        }).size());
-        assertEquals(1, newView.findInstances(new InstanceFilter() {
-            boolean first = true;
+                            public boolean accept(InstanceDescription instance) {
+                                return instance.isLeader();
+                            }
+                        })
+                        .size());
+        assertEquals(
+                1,
+                newView.findInstances(new InstanceFilter() {
+                            boolean first = true;
 
-            public boolean accept(InstanceDescription instance) {
-                if (!first) {
-                    return false;
-                }
-                first = false;
-                return true;
-            }
-        }).size());
+                            public boolean accept(InstanceDescription instance) {
+                                if (!first) {
+                                    return false;
+                                }
+                                first = false;
+                                return true;
+                            }
+                        })
+                        .size());
     }
 
     @Test
     public void testGetInstances() throws Exception {
-        DefaultTopologyView newView = TopologyHelper.createTopologyView(UUID
-                .randomUUID().toString(), UUID.randomUUID().toString());
+        DefaultTopologyView newView = TopologyHelper.createTopologyView(
+                UUID.randomUUID().toString(), UUID.randomUUID().toString());
 
         Set<InstanceDescription> instances = newView.getInstances();
         assertNotNull(instances);
@@ -243,7 +256,5 @@ public class DefaultTopologyViewTest {
         } catch (Exception e) {
             // ok
         }
-
     }
-
 }

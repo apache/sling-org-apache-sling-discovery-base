@@ -18,58 +18,58 @@
  */
 package org.apache.sling.discovery.base.connectors.ping.wl;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 import java.util.UUID;
 
 import org.apache.commons.net.util.SubnetUtils;
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 public class WildcardHelperTest {
 
     @Test
     public void testNullValues() {
-        
+
         SubnetUtils s = new SubnetUtils("1.2.3.4/10");
         s = new SubnetUtils("1.2.3.4", "255.255.0.0");
-        
-        try{
+
+        try {
             WildcardHelper.wildcardAsRegex(null);
             fail("should complain");
-        } catch(IllegalArgumentException iae) {
+        } catch (IllegalArgumentException iae) {
             // ok
         }
-        try{
+        try {
             WildcardHelper.matchesWildcard(null, "foo");
             fail("should complain");
-        } catch(IllegalArgumentException iae) {
+        } catch (IllegalArgumentException iae) {
             // ok
         }
-        try{
+        try {
             WildcardHelper.matchesWildcard("foo", null);
             fail("should complain");
-        } catch(IllegalArgumentException iae) {
+        } catch (IllegalArgumentException iae) {
             // ok
         }
     }
-    
+
     @Test
     public void testEmptyValue() {
         final String expected = "\\Q\\E";
         assertEquals(expected, WildcardHelper.wildcardAsRegex(""));
     }
-    
+
     @Test
     public void testWithoutWildcards() {
-        for(int i=0; i<1000; i++) {
+        for (int i = 0; i < 1000; i++) {
             String randomString = UUID.randomUUID().toString();
             assertTrue(WildcardHelper.matchesWildcard(randomString, randomString));
         }
     }
-    
+
     @Test
     public void testWildcards() {
         assertTrue(WildcardHelper.matchesWildcard("", "*"));
@@ -80,26 +80,34 @@ public class WildcardHelperTest {
         assertFalse(WildcardHelper.matchesWildcard("fooo", "???"));
         assertFalse(WildcardHelper.matchesWildcard("fooo", "?????"));
 
-        for(int i=0; i<100; i++) {
+        for (int i = 0; i < 100; i++) {
             String randomString = UUID.randomUUID().toString();
             assertTrue(WildcardHelper.matchesWildcard(randomString, "*"));
-            assertTrue(WildcardHelper.matchesWildcard(randomString, randomString.substring(0, randomString.length()-1)+"?"));
-            assertTrue(WildcardHelper.matchesWildcard(randomString, randomString.substring(0, randomString.length()-1)+"*"));
-            assertTrue(WildcardHelper.matchesWildcard(randomString, randomString.substring(0, randomString.length()-2)+"??"));
-            assertTrue(WildcardHelper.matchesWildcard(randomString, randomString.substring(0, randomString.length()-2)+"*"));
-            assertTrue(WildcardHelper.matchesWildcard(randomString, "?" + randomString.substring(1, randomString.length())));
-            assertTrue(WildcardHelper.matchesWildcard(randomString, "*" + randomString.substring(1, randomString.length())));
-            assertTrue(WildcardHelper.matchesWildcard(randomString, "??" + randomString.substring(2, randomString.length())));
-            assertTrue(WildcardHelper.matchesWildcard(randomString, "*" + randomString.substring(2, randomString.length())));
+            assertTrue(WildcardHelper.matchesWildcard(
+                    randomString, randomString.substring(0, randomString.length() - 1) + "?"));
+            assertTrue(WildcardHelper.matchesWildcard(
+                    randomString, randomString.substring(0, randomString.length() - 1) + "*"));
+            assertTrue(WildcardHelper.matchesWildcard(
+                    randomString, randomString.substring(0, randomString.length() - 2) + "??"));
+            assertTrue(WildcardHelper.matchesWildcard(
+                    randomString, randomString.substring(0, randomString.length() - 2) + "*"));
+            assertTrue(WildcardHelper.matchesWildcard(
+                    randomString, "?" + randomString.substring(1, randomString.length())));
+            assertTrue(WildcardHelper.matchesWildcard(
+                    randomString, "*" + randomString.substring(1, randomString.length())));
+            assertTrue(WildcardHelper.matchesWildcard(
+                    randomString, "??" + randomString.substring(2, randomString.length())));
+            assertTrue(WildcardHelper.matchesWildcard(
+                    randomString, "*" + randomString.substring(2, randomString.length())));
         }
-        
+
         assertTrue(WildcardHelper.matchesWildcard("fooo", "f*"));
         assertTrue(WildcardHelper.matchesWildcard("fooo", "fo*"));
         assertTrue(WildcardHelper.matchesWildcard("fooo", "foo*"));
         assertTrue(WildcardHelper.matchesWildcard("fooo", "fooo*"));
         assertFalse(WildcardHelper.matchesWildcard("fooo", "fooo?"));
         assertFalse(WildcardHelper.matchesWildcard("fooo", "foooo*"));
-        
+
         assertTrue(WildcardHelper.matchesWildcard("fooo", "*"));
         assertFalse(WildcardHelper.matchesWildcard("fooo", "?"));
         assertFalse(WildcardHelper.matchesWildcard("fooo", "f?"));

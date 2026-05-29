@@ -18,6 +18,11 @@
  */
 package org.apache.sling.discovery.base.connectors.ping;
 
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -29,11 +34,6 @@ import java.util.StringTokenizer;
 import java.util.zip.GZIPOutputStream;
 
 import jakarta.json.JsonException;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import org.apache.sling.discovery.ClusterView;
 import org.apache.sling.discovery.base.commons.ClusterViewHelper;
 import org.apache.sling.discovery.base.commons.ClusterViewService;
@@ -108,7 +108,8 @@ public class TopologyConnectorServlet extends HttpServlet {
 
         try {
             httpService.registerServlet(TopologyConnectorServlet.TOPOLOGY_CONNECTOR_PREFIX, this, null, null);
-            logger.info("activate: connector servlet registered at " + TopologyConnectorServlet.TOPOLOGY_CONNECTOR_PREFIX);
+            logger.info(
+                    "activate: connector servlet registered at " + TopologyConnectorServlet.TOPOLOGY_CONNECTOR_PREFIX);
         } catch (ServletException e) {
             logger.error("activate: ServletException while registering topology connector servlet: " + e, e);
         } catch (NamespaceException e) {
@@ -134,7 +135,9 @@ public class TopologyConnectorServlet extends HttpServlet {
                 try {
                     whitelistEntry = new SubnetWhitelistEntry(aWhitelistEntry);
                 } catch (Exception e) {
-                    logger.error("activate: wrongly formatted CIDR subnet definition. Expected eg '1.2.3.4/24'. ignoring: " + aWhitelistEntry);
+                    logger.error(
+                            "activate: wrongly formatted CIDR subnet definition. Expected eg '1.2.3.4/24'. ignoring: "
+                                    + aWhitelistEntry);
                     continue;
                 }
             } else if (aWhitelistEntry.contains(".") && aWhitelistEntry.contains(" ")) {
@@ -145,13 +148,17 @@ public class TopologyConnectorServlet extends HttpServlet {
                     if (st.hasMoreTokens()) {
                         final String mask = st.nextToken();
                         if (st.hasMoreTokens()) {
-                            logger.error("activate: wrongly formatted ip subnet definition. Expected '10.1.2.3 255.0.0.0'. Ignoring: " + aWhitelistEntry);
+                            logger.error(
+                                    "activate: wrongly formatted ip subnet definition. Expected '10.1.2.3 255.0.0.0'. Ignoring: "
+                                            + aWhitelistEntry);
                             continue;
                         }
                         whitelistEntry = new SubnetWhitelistEntry(ip, mask);
                     }
                 } catch (Exception e) {
-                    logger.error("activate: wrongly formatted ip subnet definition. Expected '10.1.2.3 255.0.0.0'. Ignoring: " + aWhitelistEntry);
+                    logger.error(
+                            "activate: wrongly formatted ip subnet definition. Expected '10.1.2.3 255.0.0.0'. Ignoring: "
+                                    + aWhitelistEntry);
                     continue;
                 }
             }
@@ -215,7 +222,8 @@ public class TopologyConnectorServlet extends HttpServlet {
 
         if (logger.isDebugEnabled()) {
             // javasecurity:S5145: Replace pattern-breaking characters
-            logger.debug("doPost: incoming topology announcement is: " + topologyAnnouncementJSON.replaceAll("[\n\r\t]", "_"));
+            logger.debug("doPost: incoming topology announcement is: "
+                    + topologyAnnouncementJSON.replaceAll("[\n\r\t]", "_"));
         }
         final Announcement incomingTopologyAnnouncement;
         try {
@@ -243,8 +251,7 @@ public class TopologyConnectorServlet extends HttpServlet {
                         + incomingTopologyAnnouncement);
                 response.sendError(HttpServletResponse.SC_BAD_REQUEST);
                 return;
-            } else if (ClusterViewHelper.contains(clusterView, incomingTopologyAnnouncement
-                    .getOwnerId())) {
+            } else if (ClusterViewHelper.contains(clusterView, incomingTopologyAnnouncement.getOwnerId())) {
                 if (logger.isDebugEnabled()) {
                     logger.debug("doPost: rejecting an announcement from an instance that is part of my cluster: "
                             + incomingTopologyAnnouncement);
@@ -252,25 +259,25 @@ public class TopologyConnectorServlet extends HttpServlet {
                 // marking as 'loop'
                 replyAnnouncement.setLoop(true);
                 backoffInterval = config.getBackoffStandbyInterval();
-            } else if (ClusterViewHelper.containsAny(clusterView, incomingTopologyAnnouncement
-                    .listInstances())) {
+            } else if (ClusterViewHelper.containsAny(clusterView, incomingTopologyAnnouncement.listInstances())) {
                 if (logger.isDebugEnabled()) {
-                    logger.debug("doPost: rejecting an announcement as it contains instance(s) that is/are part of my cluster: "
-                            + incomingTopologyAnnouncement);
+                    logger.debug(
+                            "doPost: rejecting an announcement as it contains instance(s) that is/are part of my cluster: "
+                                    + incomingTopologyAnnouncement);
                 }
                 // marking as 'loop'
                 replyAnnouncement.setLoop(true);
                 backoffInterval = config.getBackoffStandbyInterval();
             } else {
-                backoffInterval = announcementRegistry
-                        .registerAnnouncement(incomingTopologyAnnouncement);
+                backoffInterval = announcementRegistry.registerAnnouncement(incomingTopologyAnnouncement);
                 if (logger.isDebugEnabled()) {
                     logger.debug("doPost: backoffInterval after registration: " + backoffInterval);
                 }
                 if (backoffInterval == -1) {
                     if (logger.isDebugEnabled()) {
-                        logger.debug("doPost: rejecting an announcement from an instance that I already see in my topology: "
-                                + incomingTopologyAnnouncement);
+                        logger.debug(
+                                "doPost: rejecting an announcement from an instance that I already see in my topology: "
+                                        + incomingTopologyAnnouncement);
                     }
                     // marking as 'loop'
                     replyAnnouncement.setLoop(true);
@@ -278,10 +285,9 @@ public class TopologyConnectorServlet extends HttpServlet {
                 } else {
                     // normal, successful case: replying with the part of the topology which this instance sees
                     replyAnnouncement.setLocalCluster(clusterView);
-                    announcementRegistry.addAllExcept(replyAnnouncement, clusterView,
-                            (receivingSlingId, announcement) -> {
-                                if (announcement.getPrimaryKey().equals(
-                                        incomingTopologyAnnouncement.getPrimaryKey())) {
+                    announcementRegistry.addAllExcept(
+                            replyAnnouncement, clusterView, (receivingSlingId, announcement) -> {
+                                if (announcement.getPrimaryKey().equals(incomingTopologyAnnouncement.getPrimaryKey())) {
                                     return false;
                                 }
                                 return true;
@@ -319,7 +325,6 @@ public class TopologyConnectorServlet extends HttpServlet {
             logger.warn("doPost: no clusterView available at the moment - cannot handle connectors now: " + e);
             response.sendError(503); // "please retry, but atm I can't help since I'm isolated"
         }
-
     }
 
     /**
@@ -329,14 +334,14 @@ public class TopologyConnectorServlet extends HttpServlet {
         if (config.isHmacEnabled()) {
             final boolean isTrusted = requestValidator.isTrusted(request);
             if (!isTrusted) {
-                logger.info("isWhitelisted: rejecting distrusted " + request.getRemoteAddr()
-                        + ", " + request.getRemoteHost());
+                logger.info("isWhitelisted: rejecting distrusted " + request.getRemoteAddr() + ", "
+                        + request.getRemoteHost());
             }
             return isTrusted;
         }
 
-        if (plaintextWhitelist.contains(request.getRemoteHost()) ||
-                plaintextWhitelist.contains(request.getRemoteAddr())) {
+        if (plaintextWhitelist.contains(request.getRemoteHost())
+                || plaintextWhitelist.contains(request.getRemoteAddr())) {
             return true;
         }
 
@@ -349,5 +354,4 @@ public class TopologyConnectorServlet extends HttpServlet {
         logger.info("isWhitelisted: rejecting " + request.getRemoteAddr() + ", " + request.getRemoteHost());
         return false;
     }
-
 }

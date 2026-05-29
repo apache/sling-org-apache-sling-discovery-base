@@ -25,10 +25,10 @@ public class WildcardHelper {
 
     /** converts a string containing wildcards (* and ?) into a valid regex **/
     public static String wildcardAsRegex(String patternWithWildcards) {
-        if (patternWithWildcards==null) {
+        if (patternWithWildcards == null) {
             throw new IllegalArgumentException("patternWithWildcards must not be null");
         }
-        return "\\Q"+patternWithWildcards.replace("?", "\\E.\\Q").replace("*", "\\E.*\\Q")+"\\E";
+        return "\\Q" + patternWithWildcards.replace("?", "\\E.\\Q").replace("*", "\\E.*\\Q") + "\\E";
     }
 
     /**
@@ -39,14 +39,13 @@ public class WildcardHelper {
      * @return true if the comparee string matches against the pattern containing wildcards
      */
     public static boolean matchesWildcard(String comparee, String patternWithWildcards) {
-        if (comparee==null) {
+        if (comparee == null) {
             throw new IllegalArgumentException("comparee must not be null");
         }
-        if (patternWithWildcards==null) {
+        if (patternWithWildcards == null) {
             throw new IllegalArgumentException("patternWithEWildcards must not be null");
         }
         final String regex = wildcardAsRegex(patternWithWildcards);
         return Pattern.matches(regex, comparee);
     }
-
 }

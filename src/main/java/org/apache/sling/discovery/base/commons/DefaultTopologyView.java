@@ -70,16 +70,17 @@ public class DefaultTopologyView extends BaseTopologyView {
         }
         if ((localClusterSyncTokenId == null && other.localClusterSyncTokenId != null)
                 || (other.localClusterSyncTokenId == null && localClusterSyncTokenId != null)
-                || (localClusterSyncTokenId != null && !localClusterSyncTokenId.equals(other.localClusterSyncTokenId))) {
+                || (localClusterSyncTokenId != null
+                        && !localClusterSyncTokenId.equals(other.localClusterSyncTokenId))) {
             logger.debug("compareTopology: different localClusterSyncTokenId");
             return Type.TOPOLOGY_CHANGED;
         }
         if (this.instances.size() != other.instances.size()) {
-        	logger.debug("compareTopology: different number of instances");
+            logger.debug("compareTopology: different number of instances");
             return Type.TOPOLOGY_CHANGED;
         }
         boolean propertiesChanged = false;
-        for(final InstanceDescription instance : this.instances) {
+        for (final InstanceDescription instance : this.instances) {
 
             final Iterator<InstanceDescription> it2 = other.instances.iterator();
             InstanceDescription matchingInstance = null;
@@ -91,22 +92,22 @@ public class DefaultTopologyView extends BaseTopologyView {
                 }
             }
             if (matchingInstance == null) {
-            	if (logger.isDebugEnabled()) {
-	            	logger.debug("compareTopology: no matching instance found for {}", instance);
-            	}
+                if (logger.isDebugEnabled()) {
+                    logger.debug("compareTopology: no matching instance found for {}", instance);
+                }
                 return Type.TOPOLOGY_CHANGED;
             }
-            if (!instance.getClusterView().getId()
+            if (!instance.getClusterView()
+                    .getId()
                     .equals(matchingInstance.getClusterView().getId())) {
-            	logger.debug("compareTopology: cluster view id does not match");
+                logger.debug("compareTopology: cluster view id does not match");
                 return Type.TOPOLOGY_CHANGED;
             }
-            if (!instance.isLeader()==matchingInstance.isLeader()) {
+            if (!instance.isLeader() == matchingInstance.isLeader()) {
                 logger.debug("compareTopology: leaders differ");
                 return Type.TOPOLOGY_CHANGED;
             }
-            if (!instance.getProperties().equals(
-                    matchingInstance.getProperties())) {
+            if (!instance.getProperties().equals(matchingInstance.getProperties())) {
                 propertiesChanged = true;
             }
         }
@@ -133,8 +134,7 @@ public class DefaultTopologyView extends BaseTopologyView {
     @Override
     public int hashCode() {
         int code = 0;
-        for (Iterator<InstanceDescription> it = instances.iterator(); it
-                .hasNext();) {
+        for (Iterator<InstanceDescription> it = instances.iterator(); it.hasNext(); ) {
             InstanceDescription instance = it.next();
             code += instance.hashCode();
         }
@@ -145,8 +145,7 @@ public class DefaultTopologyView extends BaseTopologyView {
      * @see org.apache.sling.discovery.TopologyView#getLocalInstance()
      */
     public InstanceDescription getLocalInstance() {
-        for (Iterator<InstanceDescription> it = instances.iterator(); it
-                .hasNext();) {
+        for (Iterator<InstanceDescription> it = instances.iterator(); it.hasNext(); ) {
             InstanceDescription instance = it.next();
             if (instance.isLocal()) {
                 return instance;
@@ -171,10 +170,10 @@ public class DefaultTopologyView extends BaseTopologyView {
         }
         final List<InstanceDescription> instances = localClusterView.getInstances();
         addInstances(instances);
-        
+
         this.localClusterSyncTokenId = localClusterView.getLocalClusterSyncTokenId();
     }
-    
+
     /**
      * Adds the given instances to this topology
      */
@@ -182,24 +181,23 @@ public class DefaultTopologyView extends BaseTopologyView {
         if (instances == null) {
             return;
         }
-        outerLoop: for (Iterator<InstanceDescription> it = instances.iterator(); it
-                .hasNext();) {
+        outerLoop:
+        for (Iterator<InstanceDescription> it = instances.iterator(); it.hasNext(); ) {
             InstanceDescription instanceDescription = it.next();
-            for (Iterator<InstanceDescription> it2 = this.instances.iterator(); it2.hasNext();) {
+            for (Iterator<InstanceDescription> it2 = this.instances.iterator(); it2.hasNext(); ) {
                 InstanceDescription existingInstance = it2.next();
                 if (existingInstance.getSlingId().equals(instanceDescription.getSlingId())) {
                     // SLING-3726:
                     // while 'normal duplicate instances' are filtered out here correctly,
                     // 'hidden duplicate instances' that are added via this instanceDescription's
                     // cluster, are not caught.
-                    // there is, however, no simple fix for this. Since the reason is 
+                    // there is, however, no simple fix for this. Since the reason is
                     // inconsistent state information in /var/discovery/impl - either
                     // due to stale-announcements (SLING-4139) - or by some manualy
                     // copying of data from one cluster to the next (which will also
                     // be cleaned up by SLING-4139 though)
                     // so the fix for avoiding duplicate instances is really SLING-4139
-                    logger.info("addInstance: cannot add same instance twice: "
-                            + instanceDescription);
+                    logger.info("addInstance: cannot add same instance twice: " + instanceDescription);
                     continue outerLoop;
                 }
             }
@@ -215,8 +213,7 @@ public class DefaultTopologyView extends BaseTopologyView {
             throw new IllegalArgumentException("picker must not be null");
         }
         Set<InstanceDescription> result = new HashSet<InstanceDescription>();
-        for (Iterator<InstanceDescription> it = instances.iterator(); it
-                .hasNext();) {
+        for (Iterator<InstanceDescription> it = instances.iterator(); it.hasNext(); ) {
             InstanceDescription instance = it.next();
             if (picker.accept(instance)) {
                 result.add(instance);
@@ -230,8 +227,7 @@ public class DefaultTopologyView extends BaseTopologyView {
      */
     public Set<ClusterView> getClusterViews() {
         Set<ClusterView> result = new HashSet<ClusterView>();
-        for (Iterator<InstanceDescription> it = instances.iterator(); it
-                .hasNext();) {
+        for (Iterator<InstanceDescription> it = instances.iterator(); it.hasNext(); ) {
             InstanceDescription instance = it.next();
             ClusterView cluster = instance.getClusterView();
             if (cluster != null) {
@@ -244,7 +240,7 @@ public class DefaultTopologyView extends BaseTopologyView {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        try{
+        try {
             boolean firstCluster = true;
             for (ClusterView clusterView : getClusterViews()) {
                 if (!firstCluster) {
@@ -258,22 +254,21 @@ public class DefaultTopologyView extends BaseTopologyView {
                         sb.append(", ");
                     }
                     firstInstance = false;
-                    sb.append("[id=" + id.getSlingId() + ", isLeader=" + id.isLeader() + 
-                            ", isLocal=" + id.isLocal() + "]");
+                    sb.append("[id=" + id.getSlingId() + ", isLeader=" + id.isLeader() + ", isLocal=" + id.isLocal()
+                            + "]");
                 }
                 sb.append("]");
             }
-        } catch(Exception e) {
+        } catch (Exception e) {
             // paranoia fallback
             sb = new StringBuilder(instances.toString());
         }
-        return "DefaultTopologyView[current=" + isCurrent() + ", num=" + instances.size() + ", instances="
-                + sb + "]";
+        return "DefaultTopologyView[current=" + isCurrent() + ", num=" + instances.size() + ", instances=" + sb + "]";
     }
 
     @Override
     public String getLocalClusterSyncTokenId() {
-        if (localClusterSyncTokenId==null) {
+        if (localClusterSyncTokenId == null) {
             throw new IllegalStateException("no syncToken set");
         } else {
             return localClusterSyncTokenId;

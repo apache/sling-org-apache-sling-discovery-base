@@ -20,7 +20,7 @@ package org.apache.sling.discovery.base.commons;
 
 /**
  * A ViewChecker is capable of issuing a heartbeat and
- * subsequently checking the resulting, current view 
+ * subsequently checking the resulting, current view
  * in the local cluster.
  * <p>
  * This is mostly used as hooks for testing
@@ -31,10 +31,9 @@ public interface ViewChecker {
      * Check the view (without issuing a heartbeat)
      */
     public void checkView();
-    
+
     /**
      * Issue a heartbeat and check the view
      */
     public void heartbeatAndCheckView();
-
 }

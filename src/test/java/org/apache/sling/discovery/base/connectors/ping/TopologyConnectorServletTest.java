@@ -18,12 +18,9 @@
  */
 package org.apache.sling.discovery.base.connectors.ping;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 import javax.servlet.http.HttpServletRequest;
+
+import java.util.Hashtable;
 
 import org.apache.sling.discovery.base.commons.ClusterViewService;
 import org.apache.sling.discovery.base.connectors.BaseConfig;
@@ -34,7 +31,10 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.osgi.service.http.HttpService;
 
-import java.util.Hashtable;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class TopologyConnectorServletTest {
 
@@ -49,34 +49,35 @@ public class TopologyConnectorServletTest {
         when(result.getRemoteHost()).thenReturn(host);
         return result;
     }
-    
+
     @Before
     public void setUp() throws Exception {
-        //Mock BaseConfig
+        // Mock BaseConfig
         BaseConfig baseConfig = mock(BaseConfig.class);
         context.registerService(BaseConfig.class, baseConfig);
 
-        //Mock AnnouncementRegistry
+        // Mock AnnouncementRegistry
         AnnouncementRegistry announcementRegistry = mock(AnnouncementRegistry.class);
         context.registerService(AnnouncementRegistry.class, announcementRegistry);
 
-        //Mock ClusterViewService
+        // Mock ClusterViewService
         ClusterViewService clusterViewService = mock(ClusterViewService.class);
         context.registerService(ClusterViewService.class, clusterViewService);
 
-        //Mock HttpService
+        // Mock HttpService
         HttpService httpService = mock(HttpService.class);
         context.registerService(HttpService.class, httpService);
 
-        servlet = context.registerInjectActivateService(TopologyConnectorServlet.class, new TopologyConnectorServlet(), new Hashtable<>());
+        servlet = context.registerInjectActivateService(
+                TopologyConnectorServlet.class, new TopologyConnectorServlet(), new Hashtable<>());
     }
-    
+
     @Test
     public void testNull() throws Exception {
         servlet.initWhitelist(null); // should work fine
         servlet.initWhitelist(new String[0]); // should also work fine
     }
-    
+
     @Test
     public void testPlaintextWhitelist_enabled() throws Exception {
         servlet.initWhitelist(new String[] {"foo", "bar"});
@@ -85,7 +86,7 @@ public class TopologyConnectorServletTest {
         assertTrue(servlet.isWhitelisted(getRequest("y", "foo")));
         assertTrue(servlet.isWhitelisted(getRequest("y", "bar")));
     }
-    
+
     @Test
     public void testPlaintextWhitelist_disabled() throws Exception {
         servlet.initWhitelist(new String[] {});
@@ -94,7 +95,7 @@ public class TopologyConnectorServletTest {
         assertFalse(servlet.isWhitelisted(getRequest("y", "foo")));
         assertFalse(servlet.isWhitelisted(getRequest("y", "bar")));
     }
-    
+
     @Test
     public void testWildcardWhitelist() throws Exception {
         servlet.initWhitelist(new String[] {"foo*", "b?r", "test"});
@@ -110,11 +111,11 @@ public class TopologyConnectorServletTest {
         assertFalse(servlet.isWhitelisted(getRequest("fo", "x")));
         assertFalse(servlet.isWhitelisted(getRequest("x", "testy")));
     }
-    
+
     @Test
     public void testSubnetMaskWhitelist() throws Exception {
         servlet.initWhitelist(new String[] {"1.2.3.4/24", "2.3.4.1/30", "3.4.5.6/31"});
-        
+
         assertTrue(servlet.isWhitelisted(getRequest("foo", "1.2.3.4")));
         assertFalse(servlet.isWhitelisted(getRequest("1.2.3.4", "1.2.4.3")));
         assertTrue(servlet.isWhitelisted(getRequest("foo", "1.2.3.1")));

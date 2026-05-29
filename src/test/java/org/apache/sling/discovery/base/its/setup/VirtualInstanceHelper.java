@@ -32,11 +32,11 @@ import org.slf4j.LoggerFactory;
 
 public class VirtualInstanceHelper {
 
-    private final static Logger logger = LoggerFactory.getLogger(VirtualInstanceHelper.class);
+    private static final Logger logger = LoggerFactory.getLogger(VirtualInstanceHelper.class);
 
     public static void dumpRepo(ResourceResolverFactory resourceResolverFactory) throws Exception {
-        Session session = resourceResolverFactory
-                .getServiceResourceResolver(null).adaptTo(Session.class);
+        Session session =
+                resourceResolverFactory.getServiceResourceResolver(null).adaptTo(Session.class);
         logger.info("dumpRepo: ====== START =====");
         logger.info("dumpRepo: repo = " + session.getRepository());
 
@@ -49,8 +49,7 @@ public class VirtualInstanceHelper {
     }
 
     public static void dump(Node node) throws RepositoryException {
-        if (node.getPath().equals("/jcr:system")
-                || node.getPath().equals("/rep:policy")) {
+        if (node.getPath().equals("/jcr:system") || node.getPath().equals("/rep:policy")) {
             // ignore that one
             return;
         }
@@ -74,7 +73,7 @@ public class VirtualInstanceHelper {
         }
 
         StringBuffer depth = new StringBuffer();
-        for(int i=0; i<node.getDepth(); i++) {
+        for (int i = 0; i < node.getDepth(); i++) {
             depth.append(" ");
         }
         logger.info(depth + "/" + node.getName() + " -- " + sb);
@@ -84,5 +83,4 @@ public class VirtualInstanceHelper {
             dump(child);
         }
     }
-
 }

@@ -27,11 +27,11 @@ import javax.servlet.ServletRequest;
 public class WildcardWhitelistEntry implements WhitelistEntry {
 
     private final String hostOrAddressWithWildcard;
-    
+
     public WildcardWhitelistEntry(String hostOrAddressWithWildcard) {
         this.hostOrAddressWithWildcard = hostOrAddressWithWildcard;
     }
-    
+
     public boolean accepts(ServletRequest request) {
         if (WildcardHelper.matchesWildcard(request.getRemoteAddr(), hostOrAddressWithWildcard)) {
             return true;
@@ -41,5 +41,4 @@ public class WildcardWhitelistEntry implements WhitelistEntry {
         }
         return false;
     }
-
 }

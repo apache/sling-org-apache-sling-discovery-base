@@ -18,12 +18,6 @@
  */
 package org.apache.sling.discovery.base.connectors.announcement;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 import java.util.List;
 import java.util.UUID;
 
@@ -31,7 +25,6 @@ import org.apache.sling.api.resource.ResourceResolverFactory;
 import org.apache.sling.discovery.ClusterView;
 import org.apache.sling.discovery.InstanceDescription;
 import org.apache.sling.discovery.base.connectors.BaseConfig;
-
 import org.apache.sling.discovery.base.its.setup.TopologyHelper;
 import org.apache.sling.discovery.base.its.setup.VirtualInstanceHelper;
 import org.apache.sling.discovery.base.its.setup.mock.SimpleConnectorConfig;
@@ -43,6 +36,12 @@ import org.apache.sling.testing.mock.sling.junit.SlingContext;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class AnnouncementRegistryImplTest {
 
@@ -62,7 +61,8 @@ public class AnnouncementRegistryImplTest {
             public long getConnectorPingTimeout() {
                 // 10s for tests that also run on apache jenkins
                 return 10;
-            };
+            }
+            ;
         };
         slingId = UUID.randomUUID().toString();
         registry = AnnouncementRegistryImpl.testConstructorAndActivate(
@@ -71,107 +71,110 @@ public class AnnouncementRegistryImplTest {
 
     @Test
     public void testRegisterUnregister() throws Exception {
-    	doTestRegisterUnregister(false);
+        doTestRegisterUnregister(false);
     }
-    
+
     @Test
     public void testRegisterUnregister_Slow() throws Exception {
-    	doTestRegisterUnregister(true);
+        doTestRegisterUnregister(true);
     }
-    
+
     private void doTestRegisterUnregister(boolean includeFinalExpiryCheck) throws Exception {
-        try{
+        try {
             registry.registerAnnouncement(null);
             fail("should complain");
-        } catch(IllegalArgumentException iae) {
+        } catch (IllegalArgumentException iae) {
             // ok
         }
-        try{
+        try {
             registry.unregisterAnnouncement(null);
             fail("should complain");
-        } catch(IllegalArgumentException iae) {
+        } catch (IllegalArgumentException iae) {
             // ok
         }
-        try{
+        try {
             registry.unregisterAnnouncement("");
             fail("should complain");
-        } catch(IllegalArgumentException iae) {
+        } catch (IllegalArgumentException iae) {
             // ok
         }
-        
-        try{
+
+        try {
             new Announcement(null);
             fail("should complain");
-        } catch(IllegalArgumentException iae) {
+        } catch (IllegalArgumentException iae) {
             // ok
         }
-        try{
+        try {
             new Announcement("");
-            fail("should complain"); 
-        } catch(IllegalArgumentException iae) {
+            fail("should complain");
+        } catch (IllegalArgumentException iae) {
             // ok
         }
-        
+
         Announcement ann = new Announcement(slingId);
         assertFalse(ann.isValid());
-        assertFalse(registry.registerAnnouncement(ann)!=-1);
-        
-        DefaultClusterView localCluster = new DefaultClusterView(UUID.randomUUID().toString());
+        assertFalse(registry.registerAnnouncement(ann) != -1);
+
+        DefaultClusterView localCluster =
+                new DefaultClusterView(UUID.randomUUID().toString());
         ann.setLocalCluster(localCluster);
         assertFalse(ann.isValid());
-        assertFalse(registry.registerAnnouncement(ann)!=-1);
+        assertFalse(registry.registerAnnouncement(ann) != -1);
 
-        try{
+        try {
             registry.listInstances(localCluster);
             fail("doing getInstances() on an empty cluster should throw an illegalstateexception");
-        } catch(IllegalStateException ise) {
+        } catch (IllegalStateException ise) {
             // ok
         }
-        
-        DefaultInstanceDescription instance = TopologyHelper.createInstanceDescription(ann.getOwnerId(), true, localCluster);
+
+        DefaultInstanceDescription instance =
+                TopologyHelper.createInstanceDescription(ann.getOwnerId(), true, localCluster);
         assertEquals(instance.getSlingId(), ann.getOwnerId());
         assertTrue(ann.isValid());
-        assertTrue(registry.registerAnnouncement(ann)!=-1);
-        
+        assertTrue(registry.registerAnnouncement(ann) != -1);
+
         assertEquals(1, registry.listInstances(localCluster).size());
-        
+
         registry.checkExpiredAnnouncements();
         assertEquals(1, registry.listInstances(localCluster).size());
-        
+
         registry.unregisterAnnouncement(ann.getOwnerId());
         assertEquals(0, registry.listInstances(localCluster).size());
         assertTrue(ann.isValid());
-        assertTrue(registry.registerAnnouncement(ann)!=-1);
+        assertTrue(registry.registerAnnouncement(ann) != -1);
         assertEquals(1, registry.listInstances(localCluster).size());
 
         if (includeFinalExpiryCheck) {
-	        Thread.sleep(10500);
-	        assertEquals(0, registry.listInstances(localCluster).size());
+            Thread.sleep(10500);
+            assertEquals(0, registry.listInstances(localCluster).size());
         }
     }
-    
+
     @Test
     public void testLists() throws Exception {
-        try{
+        try {
             registry.listAnnouncementsInSameCluster(null);
             fail("should complain");
-        } catch(IllegalArgumentException iae) {
+        } catch (IllegalArgumentException iae) {
             // ok
         }
-        try{
+        try {
             registry.listAnnouncementsInSameCluster(null);
             fail("should complain");
-        } catch(IllegalArgumentException iae) {
+        } catch (IllegalArgumentException iae) {
             // ok
         }
         assertEquals(0, registry.listLocalAnnouncements().size());
         assertEquals(0, registry.listLocalIncomingAnnouncements().size());
-        DefaultClusterView localCluster = new DefaultClusterView(UUID.randomUUID().toString());
-        DefaultInstanceDescription instance = TopologyHelper.createInstanceDescription(slingId, true, localCluster);        
+        DefaultClusterView localCluster =
+                new DefaultClusterView(UUID.randomUUID().toString());
+        DefaultInstanceDescription instance = TopologyHelper.createInstanceDescription(slingId, true, localCluster);
         assertEquals(0, registry.listAnnouncementsInSameCluster(localCluster).size());
         assertEquals(0, registry.listLocalAnnouncements().size());
         assertEquals(0, registry.listLocalIncomingAnnouncements().size());
-        
+
         Announcement ann = new Announcement(slingId);
         ann.setLocalCluster(localCluster);
         ann.setInherited(true);
@@ -202,10 +205,10 @@ public class AnnouncementRegistryImplTest {
         assertEquals(0, registry.listLocalIncomingAnnouncements().size());
         assertFalse(registry.hasActiveAnnouncement(slingId));
         assertFalse(registry.hasActiveAnnouncement(UUID.randomUUID().toString()));
-        
+
         assertEquals(1, ann.listInstances().size());
         registry.addAllExcept(ann, localCluster, new AnnouncementFilter() {
-            
+
             @Override
             public boolean accept(String receivingSlingId, Announcement announcement) {
                 assertNotNull(receivingSlingId);
@@ -218,7 +221,7 @@ public class AnnouncementRegistryImplTest {
         assertEquals(1, registry.listAnnouncementsInSameCluster(localCluster).size());
         assertEquals(3, registry.listInstances(localCluster).size());
         registry.addAllExcept(ann, localCluster, new AnnouncementFilter() {
-            
+
             @Override
             public boolean accept(String receivingSlingId, Announcement announcement) {
                 assertNotNull(receivingSlingId);
@@ -230,19 +233,23 @@ public class AnnouncementRegistryImplTest {
         registry.registerAnnouncement(ann);
         assertEquals(2, registry.listAnnouncementsInSameCluster(localCluster).size());
     }
-    
+
     private ClusterView createCluster(int numInstances) {
-        DefaultClusterView localCluster = new DefaultClusterView(UUID.randomUUID().toString());
+        DefaultClusterView localCluster =
+                new DefaultClusterView(UUID.randomUUID().toString());
         for (int i = 0; i < numInstances; i++) {
-            DefaultInstanceDescription instance = TopologyHelper.createInstanceDescription(UUID.randomUUID().toString(), (i==0 ? true : false), localCluster);        
+            DefaultInstanceDescription instance = TopologyHelper.createInstanceDescription(
+                    UUID.randomUUID().toString(), (i == 0 ? true : false), localCluster);
         }
         return localCluster;
     }
-    
+
     private ClusterView createCluster(String... instanceIds) {
-        DefaultClusterView localCluster = new DefaultClusterView(UUID.randomUUID().toString());
+        DefaultClusterView localCluster =
+                new DefaultClusterView(UUID.randomUUID().toString());
         for (int i = 0; i < instanceIds.length; i++) {
-            DefaultInstanceDescription instance = TopologyHelper.createInstanceDescription(instanceIds[i], (i==0 ? true : false), localCluster);        
+            DefaultInstanceDescription instance =
+                    TopologyHelper.createInstanceDescription(instanceIds[i], (i == 0 ? true : false), localCluster);
         }
         return localCluster;
     }
@@ -254,22 +261,22 @@ public class AnnouncementRegistryImplTest {
         ann.setLocalCluster(remoteCluster);
         return ann;
     }
-    
+
     @Test
     public void testExpiry() throws InterruptedException, NoSuchFieldException {
         ClusterView cluster1 = createCluster(4);
         ClusterView cluster2 = createCluster(3);
         ClusterView cluster3 = createCluster(5);
-        
+
         ClusterView myCluster = createCluster(slingId);
-        
+
         Announcement ann1 = createAnnouncement(cluster1, 0, true);
         Announcement ann2 = createAnnouncement(cluster2, 1, true);
         Announcement ann3 = createAnnouncement(cluster3, 1, false);
-        
-        assertTrue(registry.registerAnnouncement(ann1)!=-1);
-        assertTrue(registry.registerAnnouncement(ann2)!=-1);
-        assertTrue(registry.registerAnnouncement(ann3)!=-1);
+
+        assertTrue(registry.registerAnnouncement(ann1) != -1);
+        assertTrue(registry.registerAnnouncement(ann2) != -1);
+        assertTrue(registry.registerAnnouncement(ann3) != -1);
         assertTrue(registry.hasActiveAnnouncement(cluster1.getInstances().get(0).getSlingId()));
         assertTrue(registry.hasActiveAnnouncement(cluster2.getInstances().get(1).getSlingId()));
         assertTrue(registry.hasActiveAnnouncement(cluster3.getInstances().get(1).getSlingId()));
@@ -277,7 +284,6 @@ public class AnnouncementRegistryImplTest {
         assertEquals(3, registry.listLocalAnnouncements().size());
         assertEquals(1, registry.listLocalIncomingAnnouncements().size());
 
-        
         {
             Announcement testAnn = createAnnouncement(myCluster, 0, false);
             assertEquals(1, testAnn.listInstances().size());
@@ -285,7 +291,6 @@ public class AnnouncementRegistryImplTest {
             assertEquals(13, testAnn.listInstances().size());
         }
 
-        
         Thread.sleep(10500);
         {
             Announcement testAnn = createAnnouncement(myCluster, 0, false);
@@ -293,21 +298,23 @@ public class AnnouncementRegistryImplTest {
             registry.addAllExcept(testAnn, myCluster, null);
             assertEquals(13, testAnn.listInstances().size());
         }
-        assertTrue(registry.registerAnnouncement(ann3)!=-1);
+        assertTrue(registry.registerAnnouncement(ann3) != -1);
         {
             Announcement testAnn = createAnnouncement(myCluster, 0, false);
             assertEquals(1, testAnn.listInstances().size());
             registry.addAllExcept(testAnn, myCluster, null);
             assertEquals(13, testAnn.listInstances().size());
         }
-        
+
         registry.checkExpiredAnnouncements();
-        
+
         assertEquals(1, registry.listAnnouncementsInSameCluster(myCluster).size());
         assertEquals(1, registry.listLocalAnnouncements().size());
         assertEquals(1, registry.listLocalIncomingAnnouncements().size());
-        assertFalse(registry.hasActiveAnnouncement(cluster1.getInstances().get(0).getSlingId()));
-        assertFalse(registry.hasActiveAnnouncement(cluster2.getInstances().get(1).getSlingId()));
+        assertFalse(
+                registry.hasActiveAnnouncement(cluster1.getInstances().get(0).getSlingId()));
+        assertFalse(
+                registry.hasActiveAnnouncement(cluster2.getInstances().get(1).getSlingId()));
         assertTrue(registry.hasActiveAnnouncement(cluster3.getInstances().get(1).getSlingId()));
         {
             Announcement testAnn = createAnnouncement(myCluster, 0, false);
@@ -315,28 +322,27 @@ public class AnnouncementRegistryImplTest {
             registry.addAllExcept(testAnn, myCluster, null);
             assertEquals(6, testAnn.listInstances().size());
         }
-        
     }
-    
+
     @Test
     public void testCluster() throws Exception {
-    	doTestCluster(false);
+        doTestCluster(false);
     }
-    
+
     @Test
     public void testCluster_Slow() throws Exception {
-    	doTestCluster(true);
+        doTestCluster(true);
     }
 
     private void doTestCluster(boolean includeFinalExpiryCheck) throws Exception {
         ClusterView cluster1 = createCluster(2);
         ClusterView cluster2 = createCluster(4);
         ClusterView cluster3 = createCluster(7);
-        
+
         Announcement ann1 = createAnnouncement(cluster1, 1, true);
         Announcement ann2 = createAnnouncement(cluster2, 2, true);
         Announcement ann3 = createAnnouncement(cluster3, 3, false);
-        
+
         final String instance1 = UUID.randomUUID().toString();
         final String instance2 = UUID.randomUUID().toString();
         final String instance3 = UUID.randomUUID().toString();
@@ -349,19 +355,22 @@ public class AnnouncementRegistryImplTest {
         AnnouncementRegistryImpl registry3 = AnnouncementRegistryImpl.testConstructorAndActivate(
                 resourceResolverFactory, new DummySlingSettingsService(instance3), config);
 
-        assertTrue(registry1.registerAnnouncement(ann1)!=-1);
-        assertTrue(registry2.registerAnnouncement(ann2)!=-1);
-        assertTrue(registry3.registerAnnouncement(ann3)!=-1);
-        
-        assertTrue(registry1.hasActiveAnnouncement(cluster1.getInstances().get(1).getSlingId()));
-        assertTrue(registry2.hasActiveAnnouncement(cluster2.getInstances().get(2).getSlingId()));
-        assertTrue(registry3.hasActiveAnnouncement(cluster3.getInstances().get(3).getSlingId()));
+        assertTrue(registry1.registerAnnouncement(ann1) != -1);
+        assertTrue(registry2.registerAnnouncement(ann2) != -1);
+        assertTrue(registry3.registerAnnouncement(ann3) != -1);
+
+        assertTrue(
+                registry1.hasActiveAnnouncement(cluster1.getInstances().get(1).getSlingId()));
+        assertTrue(
+                registry2.hasActiveAnnouncement(cluster2.getInstances().get(2).getSlingId()));
+        assertTrue(
+                registry3.hasActiveAnnouncement(cluster3.getInstances().get(3).getSlingId()));
 
         assertEquals(3, registry1.listAnnouncementsInSameCluster(myCluster).size());
         assertEquals(1, registry1.listLocalAnnouncements().size());
         assertEquals(0, registry1.listLocalIncomingAnnouncements().size());
         assertAnnouncements(registry1, myCluster, 4, 16);
-        
+
         assertEquals(3, registry2.listAnnouncementsInSameCluster(myCluster).size());
         assertEquals(1, registry2.listLocalAnnouncements().size());
         assertEquals(0, registry2.listLocalIncomingAnnouncements().size());
@@ -371,37 +380,39 @@ public class AnnouncementRegistryImplTest {
         assertEquals(1, registry3.listLocalAnnouncements().size());
         assertEquals(1, registry3.listLocalIncomingAnnouncements().size());
         assertAnnouncements(registry3, myCluster, 4, 16);
-        
+
         myCluster = createCluster(instance1, instance2);
-        
+
         VirtualInstanceHelper.dumpRepo(resourceResolverFactory);
 
         assertEquals(2, registry1.listAnnouncementsInSameCluster(myCluster).size());
         assertEquals(1, registry1.listLocalAnnouncements().size());
         assertEquals(0, registry1.listLocalIncomingAnnouncements().size());
         assertAnnouncements(registry1, myCluster, 3, 8);
-        
+
         assertEquals(2, registry2.listAnnouncementsInSameCluster(myCluster).size());
         assertEquals(1, registry2.listLocalAnnouncements().size());
         assertEquals(0, registry2.listLocalIncomingAnnouncements().size());
         assertAnnouncements(registry2, myCluster, 3, 8);
-        
+
         if (includeFinalExpiryCheck) {
-	        Thread.sleep(10500);
-	        assertAnnouncements(registry1, myCluster, 3, 8);
-	        assertAnnouncements(registry2, myCluster, 3, 8);
-	        registry1.checkExpiredAnnouncements();
-	        registry2.checkExpiredAnnouncements();
-	        assertAnnouncements(registry1, myCluster, 1, 2);
-	        assertAnnouncements(registry2, myCluster, 1, 2);
+            Thread.sleep(10500);
+            assertAnnouncements(registry1, myCluster, 3, 8);
+            assertAnnouncements(registry2, myCluster, 3, 8);
+            registry1.checkExpiredAnnouncements();
+            registry2.checkExpiredAnnouncements();
+            assertAnnouncements(registry1, myCluster, 1, 2);
+            assertAnnouncements(registry2, myCluster, 1, 2);
         }
     }
-    
-    private void assertAnnouncements(AnnouncementRegistryImpl registry,
-            ClusterView myCluster, int expectedNumAnnouncements, int expectedNumInstances) {
+
+    private void assertAnnouncements(
+            AnnouncementRegistryImpl registry,
+            ClusterView myCluster,
+            int expectedNumAnnouncements,
+            int expectedNumInstances) {
         Announcement ann = createAnnouncement(myCluster, 0, false);
         registry.addAllExcept(ann, myCluster, null);
         assertEquals(expectedNumInstances, ann.listInstances().size());
     }
-    
 }

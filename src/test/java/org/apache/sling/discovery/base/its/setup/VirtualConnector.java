@@ -23,9 +23,12 @@ import org.apache.sling.discovery.base.connectors.ping.TopologyConnectorClientIn
 public class VirtualConnector {
     @SuppressWarnings("unused")
     private final VirtualInstance from;
+
     @SuppressWarnings("unused")
     private final VirtualInstance to;
+
     private final int jettyPort;
+
     @SuppressWarnings("unused")
     private final TopologyConnectorClientInformation connectorInfo;
 
@@ -34,6 +37,6 @@ public class VirtualConnector {
         this.to = to;
         to.startJetty();
         this.jettyPort = to.getJettyPort();
-        this.connectorInfo = from.connectTo("http://localhost:"+jettyPort+"/system/console/topology/connector");
+        this.connectorInfo = from.connectTo("http://localhost:" + jettyPort + "/system/console/topology/connector");
     }
 }

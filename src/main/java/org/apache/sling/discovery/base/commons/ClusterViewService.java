@@ -21,7 +21,7 @@ package org.apache.sling.discovery.base.commons;
 import org.apache.sling.discovery.commons.providers.spi.LocalClusterView;
 
 /**
- * The ClusterViewService is capable of determining the 
+ * The ClusterViewService is capable of determining the
  * ClusterView of the local cluster (ie of the instances
  * that are all hooked to the same underlying repository).
  */
@@ -34,7 +34,7 @@ public interface ClusterViewService {
      * Returns the current, local cluster view - throwing an
      * UndefinedClusterViewException if it cannot determine
      * a clusterView at the moment.
-     * @return the current cluster view - never returns null 
+     * @return the current cluster view - never returns null
      * (it rather throws an UndefinedClusterViewException that
      * contains more details about why exactly the clusterView
      * is undefined at the moment)
@@ -43,5 +43,4 @@ public interface ClusterViewService {
      * (also contains more details as to why exactly)
      */
     LocalClusterView getLocalClusterView() throws UndefinedClusterViewException;
-
 }

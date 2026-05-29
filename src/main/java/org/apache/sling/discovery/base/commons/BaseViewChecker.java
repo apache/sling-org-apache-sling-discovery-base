@@ -106,22 +106,23 @@ public abstract class BaseViewChecker implements ViewChecker, Runnable {
 
     @Activate
     protected void activate(ComponentContext context) {
-    	synchronized(lock) {
-    		this.context = context;
+        synchronized (lock) {
+            this.context = context;
 
-	        slingId = getSlingSettingsService().getSlingId();
-	        NAME = "discovery.connectors.common.runner." + slingId;
+            slingId = getSlingSettingsService().getSlingId();
+            NAME = "discovery.connectors.common.runner." + slingId;
 
-	        doActivate();
-	        activated = true;
+            doActivate();
+            activated = true;
             issueHeartbeat();
-    	}
+        }
     }
 
     protected void doActivate() {
         try {
             final long interval = getConnectorConfig().getConnectorPingInterval();
-            logger.info("doActivate: starting periodic connectorPing job for "+slingId+" with interval "+interval+" sec.");
+            logger.info("doActivate: starting periodic connectorPing job for " + slingId + " with interval " + interval
+                    + " sec.");
             periodicPingJob = new PeriodicBackgroundJob(interval, NAME, this);
         } catch (Exception e) {
             logger.error("doActivate: Could not start connectorPing runner: " + e, e);
@@ -143,7 +144,7 @@ public abstract class BaseViewChecker implements ViewChecker, Runnable {
     /** for testing only **/
     @Override
     public void checkView() {
-        synchronized(lock) {
+        synchronized (lock) {
             doCheckView();
         }
     }
@@ -155,13 +156,13 @@ public abstract class BaseViewChecker implements ViewChecker, Runnable {
 
     @Override
     public void heartbeatAndCheckView() {
-        logger.debug("heartbeatAndCheckView: start. [for slingId="+slingId+"]");
-        synchronized(lock) {
-        	if (!activated) {
-        		// SLING:2895: avoid heartbeats if not activated
-        	    logger.debug("heartbeatAndCheckView: not activated yet");
-        		return;
-        	}
+        logger.debug("heartbeatAndCheckView: start. [for slingId=" + slingId + "]");
+        synchronized (lock) {
+            if (!activated) {
+                // SLING:2895: avoid heartbeats if not activated
+                logger.debug("heartbeatAndCheckView: not activated yet");
+                return;
+            }
 
             // issue a heartbeat
             issueHeartbeat();
@@ -169,7 +170,7 @@ public abstract class BaseViewChecker implements ViewChecker, Runnable {
             // check the view
             doCheckView();
         }
-        logger.debug("heartbeatAndCheckView: end. [for slingId="+slingId+"]");
+        logger.debug("heartbeatAndCheckView: end. [for slingId=" + slingId + "]");
     }
 
     /** Trigger the issuance of the next heartbeat asap instead of at next heartbeat interval **/
@@ -179,9 +180,10 @@ public abstract class BaseViewChecker implements ViewChecker, Runnable {
             // then fire a job immediately
             // use 'fireJobAt' here, instead of 'fireJob' to make sure the job can always be triggered
             // 'fireJob' checks for a job from the same job-class to already exist
-            // 'fireJobAt' though allows to pass a name for the job - which can be made unique, thus does not conflict/already-exist
+            // 'fireJobAt' though allows to pass a name for the job - which can be made unique, thus does not
+            // conflict/already-exist
             logger.debug("triggerAsyncConnectorPing: firing job to trigger heartbeat");
-            getScheduler().schedule(this, getScheduler().NOW().name(NAME+UUID.randomUUID()));
+            getScheduler().schedule(this, getScheduler().NOW().name(NAME + UUID.randomUUID()));
         } catch (Exception e) {
             logger.info("triggerAsyncConnectorPing: Could not trigger heartbeat: " + e);
         }
@@ -210,7 +212,7 @@ public abstract class BaseViewChecker implements ViewChecker, Runnable {
             return;
         }
         if (logger.isDebugEnabled()) {
-            logger.debug("issueConnectorPings: pinging outgoing topology connectors (if there is any) for "+slingId);
+            logger.debug("issueConnectorPings: pinging outgoing topology connectors (if there is any) for " + slingId);
         }
         getConnectorRegistry().pingOutgoingConnectors(forcePing);
         forcePing = false;
@@ -231,18 +233,20 @@ public abstract class BaseViewChecker implements ViewChecker, Runnable {
     /**
      * Bind a http service
      */
-    @Reference(service = HttpService.class,
+    @Reference(
+            service = HttpService.class,
             cardinality = ReferenceCardinality.MULTIPLE,
             policy = ReferencePolicy.DYNAMIC,
-            bind = "bindHttpService", unbind = "unbindHttpService")
+            bind = "bindHttpService",
+            unbind = "unbindHttpService")
     protected void bindHttpService(final ServiceReference reference) {
         String[] endpointUrls = toStringArray(reference.getProperty(REG_PROPERTY_ENDPOINTS));
-        if ( endpointUrls == null ) {
+        if (endpointUrls == null) {
             endpointUrls = toStringArray(reference.getProperty(REG_PROPERTY_ENDPOINTS_RFC));
         }
-        if ( endpointUrls != null ) {
-            synchronized ( lock ) {
-                this.endpoints.put((Long)reference.getProperty(Constants.SERVICE_ID), endpointUrls);
+        if (endpointUrls != null) {
+            synchronized (lock) {
+                this.endpoints.put((Long) reference.getProperty(Constants.SERVICE_ID), endpointUrls);
             }
         }
     }
@@ -251,8 +255,8 @@ public abstract class BaseViewChecker implements ViewChecker, Runnable {
      * Unbind a http service
      */
     protected void unbindHttpService(final ServiceReference reference) {
-        synchronized ( lock ) {
-            if ( this.endpoints.remove(reference.getProperty(Constants.SERVICE_ID)) != null ) {
+        synchronized (lock) {
+            if (this.endpoints.remove(reference.getProperty(Constants.SERVICE_ID)) != null) {
                 // do nothing
             }
         }
@@ -265,7 +269,7 @@ public abstract class BaseViewChecker implements ViewChecker, Runnable {
 
         } else if (propValue instanceof String) {
             // single string
-            return new String[] { (String) propValue };
+            return new String[] {(String) propValue};
 
         } else if (propValue instanceof String[]) {
             // String[]
@@ -300,9 +304,9 @@ public abstract class BaseViewChecker implements ViewChecker, Runnable {
     protected String getEndpointsAsString() {
         final StringBuilder sb = new StringBuilder();
         boolean first = true;
-        for(final String[] points : endpoints.values()) {
-            for(final String point : points) {
-                if ( first ) {
+        for (final String[] points : endpoints.values()) {
+            for (final String point : points) {
+                if (first) {
                     first = false;
                 } else {
                     sb.append(",");
@@ -311,7 +315,5 @@ public abstract class BaseViewChecker implements ViewChecker, Runnable {
             }
         }
         return sb.toString();
-
     }
-
 }

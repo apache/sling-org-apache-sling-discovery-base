@@ -29,7 +29,7 @@ import org.apache.sling.discovery.commons.providers.spi.LocalClusterView;
 public class SimpleClusterViewService implements ClusterViewService {
 
     private LocalClusterView clusterView;
-    
+
     private final String slingId;
 
     public SimpleClusterViewService(String slingId) {
@@ -38,7 +38,7 @@ public class SimpleClusterViewService implements ClusterViewService {
         new DefaultInstanceDescription(clusterView, true, true, slingId, new HashMap<String, String>());
         this.clusterView = clusterView;
     }
-    
+
     @Override
     public String getSlingId() {
         return slingId;
@@ -46,14 +46,13 @@ public class SimpleClusterViewService implements ClusterViewService {
 
     @Override
     public LocalClusterView getLocalClusterView() throws UndefinedClusterViewException {
-        if (clusterView==null) {
+        if (clusterView == null) {
             throw new IllegalStateException("no clusterView set");
         }
         return clusterView;
     }
-    
+
     public void setClusterView(LocalClusterView clusterView) {
         this.clusterView = clusterView;
     }
-
 }

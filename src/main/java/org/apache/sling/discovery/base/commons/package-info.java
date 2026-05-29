@@ -18,7 +18,7 @@
  */
 
 /**
- * Provides some common classes for discovery implementors that 
+ * Provides some common classes for discovery implementors that
  * choose to extend from discovery.base
  *
  * @version 1.1.0

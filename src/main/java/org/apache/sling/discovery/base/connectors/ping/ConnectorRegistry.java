@@ -40,5 +40,4 @@ public interface ConnectorRegistry {
 
     /** Unregister an outgoing topology connector identified by the given (connector) id **/
     boolean unregisterOutgoingConnector(String id);
-
 }

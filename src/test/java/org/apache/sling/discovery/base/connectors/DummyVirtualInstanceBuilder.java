@@ -18,6 +18,7 @@
  */
 package org.apache.sling.discovery.base.connectors;
 
+import org.apache.sling.api.resource.ResourceResolverFactory;
 import org.apache.sling.discovery.base.commons.BaseDiscoveryService;
 import org.apache.sling.discovery.base.commons.ClusterViewService;
 import org.apache.sling.discovery.base.commons.DummyDiscoveryService;
@@ -25,7 +26,6 @@ import org.apache.sling.discovery.base.commons.ViewChecker;
 import org.apache.sling.discovery.base.its.setup.ModifiableTestBaseConfig;
 import org.apache.sling.discovery.base.its.setup.VirtualInstanceBuilder;
 import org.apache.sling.discovery.base.its.setup.mock.DummyViewChecker;
-import org.apache.sling.api.resource.ResourceResolverFactory;
 import org.apache.sling.discovery.base.its.setup.mock.SimpleClusterViewService;
 import org.apache.sling.discovery.base.its.setup.mock.SimpleConnectorConfig;
 
@@ -33,8 +33,7 @@ public class DummyVirtualInstanceBuilder extends VirtualInstanceBuilder {
 
     private ModifiableTestBaseConfig connectorConfig;
 
-    public DummyVirtualInstanceBuilder() {
-    }
+    public DummyVirtualInstanceBuilder() {}
 
     @Override
     public VirtualInstanceBuilder createNewRepository() throws Exception {
@@ -50,24 +49,35 @@ public class DummyVirtualInstanceBuilder extends VirtualInstanceBuilder {
         // nothing to do now
         return this;
     }
-    
 
-    
     protected ClusterViewService createClusterViewService() {
         return new SimpleClusterViewService(getSlingId());
     }
 
     protected ViewChecker createViewChecker() throws Exception {
-        return DummyViewChecker.testConstructor(getSlingSettingsService(), getResourceResolverFactory(), getConnectorRegistry(), getAnnouncementRegistry(), getScheduler(), getConnectorConfig());
+        return DummyViewChecker.testConstructor(
+                getSlingSettingsService(),
+                getResourceResolverFactory(),
+                getConnectorRegistry(),
+                getAnnouncementRegistry(),
+                getScheduler(),
+                getConnectorConfig());
     }
 
     protected BaseDiscoveryService createDiscoveryService() throws Exception {
-        return new DummyDiscoveryService(getSlingId(), getClusterViewService(), getAnnouncementRegistry(), getResourceResolverFactory(), getConnectorConfig(), getConnectorRegistry(), getScheduler());
+        return new DummyDiscoveryService(
+                getSlingId(),
+                getClusterViewService(),
+                getAnnouncementRegistry(),
+                getResourceResolverFactory(),
+                getConnectorConfig(),
+                getConnectorRegistry(),
+                getScheduler());
     }
 
     @Override
     public ModifiableTestBaseConfig getConnectorConfig() {
-        if (connectorConfig==null) {
+        if (connectorConfig == null) {
             connectorConfig = createConnectorConfig();
         }
         return connectorConfig;
@@ -76,7 +86,7 @@ public class DummyVirtualInstanceBuilder extends VirtualInstanceBuilder {
     private ModifiableTestBaseConfig createConnectorConfig() {
         return new SimpleConnectorConfig();
     }
-    
+
     @Override
     protected void resetRepo() {
         // does nothing

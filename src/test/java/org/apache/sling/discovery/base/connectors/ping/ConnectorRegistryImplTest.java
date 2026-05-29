@@ -18,8 +18,6 @@
  */
 package org.apache.sling.discovery.base.connectors.ping;
 
-import static org.junit.Assert.fail;
-
 import java.net.URL;
 import java.util.UUID;
 
@@ -38,6 +36,8 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
+import static org.junit.Assert.fail;
+
 public class ConnectorRegistryImplTest {
 
     @Rule
@@ -48,7 +48,7 @@ public class ConnectorRegistryImplTest {
     public VirtualInstanceBuilder newBuilder() {
         return new DummyVirtualInstanceBuilder().setSlingContext(context);
     }
-    
+
     @Before
     public void setup() throws Exception {
         VirtualInstanceBuilder builder = newBuilder()
@@ -58,10 +58,10 @@ public class ConnectorRegistryImplTest {
                 .setConnectorPingTimeout(20);
         i = builder.build();
     }
-    
+
     @After
     public void teardown() throws Exception {
-        if (i!=null) {
+        if (i != null) {
             try {
                 i.stopViewChecker();
             } catch (Throwable e) {
@@ -72,7 +72,7 @@ public class ConnectorRegistryImplTest {
             i.stop();
         }
     }
-    
+
     @Test
     public void testRegisterUnregister() throws Exception {
         BaseConfig config = new SimpleConnectorConfig() {
@@ -82,10 +82,11 @@ public class ConnectorRegistryImplTest {
             }
         };
         AnnouncementRegistryImpl announcementRegistry = AnnouncementRegistryImpl.testConstructorAndActivate(
-                context.getService(ResourceResolverFactory.class), new DummySlingSettingsService(UUID.randomUUID().toString()), config);
+                context.getService(ResourceResolverFactory.class),
+                new DummySlingSettingsService(UUID.randomUUID().toString()),
+                config);
 
-        ConnectorRegistry c = ConnectorRegistryImpl.testConstructor(
-                announcementRegistry, config);
+        ConnectorRegistry c = ConnectorRegistryImpl.testConstructor(announcementRegistry, config);
 
         final URL url = new URL("http://localhost:1234/connector");
         final ClusterViewService cvs = i.getClusterViewService();
@@ -101,8 +102,7 @@ public class ConnectorRegistryImplTest {
         } catch (IllegalArgumentException e) {
             // ok
         }
-        TopologyConnectorClientInformation client = c
-                .registerOutgoingConnector(cvs, url);
+        TopologyConnectorClientInformation client = c.registerOutgoingConnector(cvs, url);
         try {
             // should not be able to register same url twice
             client = c.registerOutgoingConnector(cvs, url);

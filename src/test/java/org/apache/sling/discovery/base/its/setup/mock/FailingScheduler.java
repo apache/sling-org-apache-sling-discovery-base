@@ -28,49 +28,62 @@ import org.apache.sling.commons.scheduler.Scheduler;
 import org.mockito.Mockito;
 
 public class FailingScheduler implements Scheduler {
-    
+
     private final ScheduleOptions options = Mockito.mock(ScheduleOptions.class);
 
     @Override
     public void removeJob(String name) throws NoSuchElementException {
         // nothing to do here
     }
-    
+
     @Override
-    public boolean fireJobAt(String name, Object job, Map<String, Serializable> config, Date date, int times, long period) {
+    public boolean fireJobAt(
+            String name, Object job, Map<String, Serializable> config, Date date, int times, long period) {
         return false;
     }
-    
+
     @Override
     public void fireJobAt(String name, Object job, Map<String, Serializable> config, Date date) throws Exception {
         throw new Exception("cos you are really worth it");
     }
-    
+
     @Override
     public boolean fireJob(Object job, Map<String, Serializable> config, int times, long period) {
         return false;
     }
-    
+
     @Override
     public void fireJob(Object job, Map<String, Serializable> config) throws Exception {
         throw new Exception("cos you are really worth it");
     }
-    
+
     @Override
-    public void addPeriodicJob(String name, Object job, Map<String, Serializable> config, long period, boolean canRunConcurrently,
-            boolean startImmediate) throws Exception {
-        throw new Exception("cos you are really worth it");
-    }
-    
-    @Override
-    public void addPeriodicJob(String name, Object job, Map<String, Serializable> config, long period, boolean canRunConcurrently)
+    public void addPeriodicJob(
+            String name,
+            Object job,
+            Map<String, Serializable> config,
+            long period,
+            boolean canRunConcurrently,
+            boolean startImmediate)
             throws Exception {
         throw new Exception("cos you are really worth it");
     }
-    
+
     @Override
-    public void addJob(String name, Object job, Map<String, Serializable> config, String schedulingExpression,
-            boolean canRunConcurrently) throws Exception {
+    public void addPeriodicJob(
+            String name, Object job, Map<String, Serializable> config, long period, boolean canRunConcurrently)
+            throws Exception {
+        throw new Exception("cos you are really worth it");
+    }
+
+    @Override
+    public void addJob(
+            String name,
+            Object job,
+            Map<String, Serializable> config,
+            String schedulingExpression,
+            boolean canRunConcurrently)
+            throws Exception {
         throw new Exception("cos you are really worth it");
     }
 

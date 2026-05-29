@@ -30,24 +30,24 @@ import org.apache.sling.discovery.InstanceDescription;
  */
 public interface AnnouncementRegistry {
 
-    /** 
+    /**
      * Register the given announcement - and returns the backoff interval (in seconds)
      * for stable connectors
-     * - or -1 if the registration was not successful (likely indicating a loop) 
+     * - or -1 if the registration was not successful (likely indicating a loop)
      * @return the backoff interval (in seconds) for stable connectors
-     * - or -1 if the registration was not successful (likely indicating a loop) 
+     * - or -1 if the registration was not successful (likely indicating a loop)
      */
     long registerAnnouncement(Announcement topologyAnnouncement);
-    
+
     /** list all announcements that were received by instances in the local cluster **/
     Collection<Announcement> listAnnouncementsInSameCluster(ClusterView localClusterView);
-    
+
     /** list all announcements that were received (incoming or inherited) by this instance **/
     Collection<Announcement> listLocalAnnouncements();
-    
-    /** list all announcements that this instance received (incoming) **/ 
+
+    /** list all announcements that this instance received (incoming) **/
     Collection<CachedAnnouncement> listLocalIncomingAnnouncements();
-    
+
     /** Check for expired announcements and remove any if applicable **/
     void checkExpiredAnnouncements();
 
@@ -62,5 +62,4 @@ public interface AnnouncementRegistry {
 
     /** Whether or not the given owner has an active (ie not expired) announcement registered **/
     boolean hasActiveAnnouncement(String ownerId);
-
 }

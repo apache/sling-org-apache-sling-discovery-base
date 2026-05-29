@@ -23,5 +23,4 @@ import org.apache.sling.api.resource.ResourceResolverFactory;
 public interface VirtualRepository {
 
     ResourceResolverFactory getResourceResolverFactory();
-
 }

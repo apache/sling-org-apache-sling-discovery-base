@@ -44,7 +44,7 @@ import org.slf4j.LoggerFactory;
  * keeps a list of outgoing connectors and is capable of
  * pinging them.
  */
-@Component(service= ConnectorRegistry.class)
+@Component(service = ConnectorRegistry.class)
 public class ConnectorRegistryImpl implements ConnectorRegistry {
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
@@ -61,8 +61,7 @@ public class ConnectorRegistryImpl implements ConnectorRegistry {
     /** the local port is added to the announcement as the serverInfo object **/
     private String port = "";
 
-    public static ConnectorRegistry testConstructor(AnnouncementRegistry announcementRegistry,
-            BaseConfig config) {
+    public static ConnectorRegistry testConstructor(AnnouncementRegistry announcementRegistry, BaseConfig config) {
         ConnectorRegistryImpl registry = new ConnectorRegistryImpl();
         registry.announcementRegistry = announcementRegistry;
         registry.config = config;
@@ -70,23 +69,25 @@ public class ConnectorRegistryImpl implements ConnectorRegistry {
         // and not useful for testing
         return registry;
     }
-    
+
     @Activate
     protected void activate(BundleContext context) {
         port = context.getProperty("org.osgi.service.http.port");
     }
-    
+
     @Deactivate
     protected void deactivate() {
         synchronized (outgoingClientsMap) {
-            for (Iterator<TopologyConnectorClient> it = outgoingClientsMap.values().iterator(); it.hasNext();) {
+            for (Iterator<TopologyConnectorClient> it =
+                            outgoingClientsMap.values().iterator();
+                    it.hasNext(); ) {
                 final TopologyConnectorClient client = it.next();
                 client.disconnect();
                 it.remove();
             }
         }
     }
-    
+
     public TopologyConnectorClientInformation registerOutgoingConnector(
             final ClusterViewService clusterViewService, final URL connectorUrl) {
         if (announcementRegistry == null) {
@@ -95,8 +96,9 @@ public class ConnectorRegistryImpl implements ConnectorRegistry {
         }
         TopologyConnectorClient client;
         synchronized (outgoingClientsMap) {
-            for (Iterator<Entry<String, TopologyConnectorClient>> it = outgoingClientsMap
-                    .entrySet().iterator(); it.hasNext();) {
+            for (Iterator<Entry<String, TopologyConnectorClient>> it =
+                            outgoingClientsMap.entrySet().iterator();
+                    it.hasNext(); ) {
                 Entry<String, TopologyConnectorClient> entry = it.next();
                 if (entry.getValue().getConnectorUrl().toExternalForm().equals(connectorUrl.toExternalForm())) {
                     it.remove();
@@ -105,14 +107,12 @@ public class ConnectorRegistryImpl implements ConnectorRegistry {
             }
             String serverInfo;
             try {
-                serverInfo = InetAddress.getLocalHost().getCanonicalHostName()
-                        + ":" + port;
+                serverInfo = InetAddress.getLocalHost().getCanonicalHostName() + ":" + port;
             } catch (Exception e) {
                 serverInfo = "localhost:" + port;
             }
-            client = new TopologyConnectorClient(clusterViewService,
-                    announcementRegistry, config, connectorUrl,
-                    serverInfo);
+            client = new TopologyConnectorClient(
+                    clusterViewService, announcementRegistry, config, connectorUrl, serverInfo);
             outgoingClientsMap.put(client.getId(), client);
         }
         client.ping(false);
@@ -143,13 +143,10 @@ public class ConnectorRegistryImpl implements ConnectorRegistry {
     public void pingOutgoingConnectors(boolean force) {
         List<TopologyConnectorClient> outgoingTemplatesClone;
         synchronized (outgoingClientsMap) {
-            outgoingTemplatesClone = new ArrayList<>(
-                    outgoingClientsMap.values());
+            outgoingTemplatesClone = new ArrayList<>(outgoingClientsMap.values());
         }
-        for (Iterator<TopologyConnectorClient> it = outgoingTemplatesClone
-                .iterator(); it.hasNext();) {
+        for (Iterator<TopologyConnectorClient> it = outgoingTemplatesClone.iterator(); it.hasNext(); ) {
             it.next().ping(force);
         }
     }
-
 }
