@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.Key;
@@ -161,24 +162,9 @@ public class TopologyRequestValidator {
                 StringWriter writer = new StringWriter();
                 Json.createGenerator(writer).write(json.build()).close();
                 return writer.toString();
-            } catch (InvalidKeyException e) {
-                e.printStackTrace();
-                throw new IOException("Unable to Encrypt Message " + e.getMessage());
-            } catch (IllegalBlockSizeException e) {
-                throw new IOException("Unable to Encrypt Message " + e.getMessage());
-            } catch (BadPaddingException e) {
-                throw new IOException("Unable to Encrypt Message " + e.getMessage());
-            } catch (UnsupportedEncodingException e) {
-                throw new IOException("Unable to Encrypt Message " + e.getMessage());
-            } catch (NoSuchAlgorithmException e) {
-                throw new IOException("Unable to Encrypt Message " + e.getMessage());
-            } catch (NoSuchPaddingException e) {
-                throw new IOException("Unable to Encrypt Message " + e.getMessage());
-            } catch (JsonException e) {
-                throw new IOException("Unable to Encrypt Message " + e.getMessage());
-            } catch (InvalidKeySpecException e) {
-                throw new IOException("Unable to Encrypt Message " + e.getMessage());
-            } catch (InvalidAlgorithmParameterException e) {
+            } catch (InvalidKeyException | IllegalBlockSizeException | BadPaddingException | NoSuchAlgorithmException
+                    | NoSuchPaddingException | JsonException | InvalidKeySpecException
+                    | InvalidAlgorithmParameterException e) {
                 throw new IOException("Unable to Encrypt Message " + e.getMessage());
             }
 
@@ -235,22 +221,10 @@ public class TopologyRequestValidator {
                         if (json.containsKey("payload")) {
                             return decrypt(json.getJsonArray("payload"));
                         }
-                    } catch (JsonException e) {
-                        throw new IOException("Encrypted Message is in the correct json format");
-                    } catch (InvalidKeyException e) {
-                        throw new IOException("Encrypted Message is in the correct json format");
-                    } catch (IllegalBlockSizeException e) {
-                        throw new IOException("Encrypted Message is in the correct json format");
-                    } catch (BadPaddingException e) {
-                        throw new IOException("Encrypted Message is in the correct json format");
-                    } catch (NoSuchAlgorithmException e) {
-                        throw new IOException("Encrypted Message is in the correct json format");
-                    } catch (NoSuchPaddingException e) {
-                        throw new IOException("Encrypted Message is in the correct json format");
-                    } catch (InvalidAlgorithmParameterException e) {
-                        throw new IOException("Encrypted Message is in the correct json format");
-                    } catch (InvalidKeySpecException e) {
-                        throw new IOException("Encrypted Message is in the correct json format");
+                    } catch (JsonException | InvalidKeyException | IllegalBlockSizeException | BadPaddingException
+                            | NoSuchAlgorithmException | NoSuchPaddingException | InvalidAlgorithmParameterException
+                            | InvalidKeySpecException e) {
+                        throw new IOException("Encrypted Message is not in the correct json format");
                     }
 
                 }
@@ -441,14 +415,14 @@ public class TopologyRequestValidator {
      * @throws InvalidAlgorithmParameterException
      */
     private String decrypt(JsonArray jsonArray) throws IllegalBlockSizeException,
-            BadPaddingException, UnsupportedEncodingException, InvalidKeyException,
-            NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException, InvalidKeySpecException {
+            BadPaddingException, InvalidKeyException, NoSuchAlgorithmException,
+            NoSuchPaddingException, InvalidAlgorithmParameterException, InvalidKeySpecException {
         Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
-        byte[] nonce = Base64.decodeBase64(jsonArray.get(0).toString().getBytes("UTF-8"));
-        byte[] ciphertext = Base64.decodeBase64(jsonArray.get(1).toString().getBytes("UTF-8"));
+        byte[] nonce = Base64.decodeBase64(jsonArray.get(0).toString().getBytes(StandardCharsets.UTF_8));
+        byte[] ciphertext = Base64.decodeBase64(jsonArray.get(1).toString().getBytes(StandardCharsets.UTF_8));
         GCMParameterSpec spec = new GCMParameterSpec(GCM_TAG_LENGTH, nonce);
         cipher.init(Cipher.DECRYPT_MODE, getCipherKey(nonce), spec);
-        return new String(cipher.doFinal(ciphertext), "UTF-8");
+        return new String(cipher.doFinal(ciphertext), StandardCharsets.UTF_8);
     }
 
     /**
@@ -466,17 +440,17 @@ public class TopologyRequestValidator {
      * @throws InvalidAlgorithmParameterException
      */
     private List<String> encrypt(String payload) throws IllegalBlockSizeException,
-            BadPaddingException, UnsupportedEncodingException, InvalidKeyException,
-            NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeySpecException, InvalidAlgorithmParameterException {
+            BadPaddingException, InvalidKeyException, NoSuchAlgorithmException,
+            NoSuchPaddingException, InvalidKeySpecException, InvalidAlgorithmParameterException {
         Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
         byte[] nonce = new byte[GCM_NONCE_LENGTH];
         random.nextBytes(nonce);
         GCMParameterSpec spec = new GCMParameterSpec(GCM_TAG_LENGTH, nonce);
         cipher.init(Cipher.ENCRYPT_MODE, getCipherKey(nonce), spec);
-        byte[] ciphertext = cipher.doFinal(payload.getBytes("UTF-8"));
-        List<String> encrypted = new ArrayList<String>();
-        encrypted.add(new String(Base64.encodeBase64(nonce), "UTF-8"));
-        encrypted.add(new String(Base64.encodeBase64(ciphertext), "UTF-8"));
+        byte[] ciphertext = cipher.doFinal(payload.getBytes(StandardCharsets.UTF_8));
+        List<String> encrypted = new ArrayList<>();
+        encrypted.add(new String(Base64.encodeBase64(nonce), StandardCharsets.UTF_8));
+        encrypted.add(new String(Base64.encodeBase64(ciphertext), StandardCharsets.UTF_8));
         return encrypted;
     }
 
