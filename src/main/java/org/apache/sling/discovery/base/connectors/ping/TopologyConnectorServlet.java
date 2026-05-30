@@ -176,7 +176,6 @@ public class TopologyConnectorServlet extends HttpServlet {
         }
     }
 
-
     @Override
     protected void doDelete(HttpServletRequest request, HttpServletResponse response) {
 
@@ -311,7 +310,9 @@ public class TopologyConnectorServlet extends HttpServlet {
                         replyAnnouncement.setLocalCluster(clusterView);
                         announcementRegistry.addAllExcept(
                                 replyAnnouncement, clusterView, (receivingSlingId, announcement) -> {
-                                    if (announcement.getPrimaryKey().equals(incomingTopologyAnnouncement.getPrimaryKey())) {
+                                    if (announcement
+                                            .getPrimaryKey()
+                                            .equals(incomingTopologyAnnouncement.getPrimaryKey())) {
                                         return false;
                                     }
                                     return true;
@@ -321,7 +322,8 @@ public class TopologyConnectorServlet extends HttpServlet {
                 if (backoffInterval > 0) {
                     replyAnnouncement.setBackoffInterval(backoffInterval);
                     if (logger.isDebugEnabled()) {
-                        logger.debug("doPut: backoffInterval for client set to " + replyAnnouncement.getBackoffInterval());
+                        logger.debug(
+                                "doPut: backoffInterval for client set to " + replyAnnouncement.getBackoffInterval());
                     }
                 }
                 final String p = requestValidator.encodeMessage(replyAnnouncement.asJSON());
