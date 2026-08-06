@@ -44,6 +44,7 @@
         <sling.java.version>17</sling.java.version>
         <surefire.maxmem>-Xmx2048m</surefire.maxmem>
         <surefire.argline>${surefire.maxmem}</surefire.argline>
+        <jetty.version>12.0.36</jetty.version>
     </properties>
 
     <dependencies>
@@ -161,13 +162,13 @@
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-server</artifactId>
-            <version>12.0.35</version>
+            <version>${jetty.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.eclipse.jetty.ee8</groupId>
             <artifactId>jetty-ee8-servlet</artifactId>
-            <version>12.0.35</version>
+            <version>${jetty.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
