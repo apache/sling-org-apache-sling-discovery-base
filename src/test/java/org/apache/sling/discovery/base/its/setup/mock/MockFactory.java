@@ -31,6 +31,7 @@ import org.jmock.Mockery;
 import org.jmock.integration.junit4.JUnit4Mockery;
 import org.jmock.lib.action.ReturnValueAction;
 import org.jmock.lib.action.VoidAction;
+import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.service.component.ComponentContext;
 
@@ -78,15 +79,25 @@ public class MockFactory {
 
     public static ComponentContext mockComponentContext() {
         Mockery context = new JUnit4Mockery();
+        final Bundle systemBundle = context.mock(Bundle.class, "systemBundle");
+        context.checking(new Expectations() {
+            {
+                allowing(systemBundle).getState();
+                will(returnValue(Bundle.ACTIVE));
+            }
+        });
         final BundleContext bc = context.mock(BundleContext.class);
         context.checking(new Expectations() {
             {
                 allowing(bc).registerService(with(any(String.class)),
                         with(any(Object.class)), with(any(Dictionary.class)));
                 will(VoidAction.INSTANCE);
-                
+
                 allowing(bc).getProperty(with(any(String.class)));
                 will(new ReturnValueAction("foo"));
+
+                allowing(bc).getBundle(0);
+                will(returnValue(systemBundle));
             }
         });
 
